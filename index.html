@@ -54,7 +54,18 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .sidebar-user{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
 .user-role{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 .role-admin{background:var(--accent);color:#000}
-.role-team{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8)}
+.role-manager{background:#7c3aed;color:#fff}
+.role-technician{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8)}
+
+/* ── PENDING TASKS SIDEBAR ── */
+.pending-section{padding:10px 0;border-top:1px solid rgba(255,255,255,.1);margin-top:4px}
+.pending-label{font-size:10px;color:rgba(255,255,255,.35);padding:8px 20px 6px;text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;gap:6px}
+.pending-badge-count{background:var(--red);color:#fff;font-size:9px;border-radius:20px;padding:1px 6px;font-weight:700}
+.pending-task-item{padding:8px 14px 8px 20px;border-left:3px solid transparent;cursor:pointer;transition:all .15s}
+.pending-task-item:hover{background:rgba(255,255,255,.06);border-left-color:var(--accent)}
+.pt-dt{font-size:11px;color:#fff;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-meta{font-size:10px;color:rgba(255,255,255,.45);margin-top:2px}
+.pt-urgent{border-left-color:var(--red)!important;background:rgba(224,36,36,.08)}
 .user-name{font-size:13px;color:#fff;margin-top:4px;font-weight:500}
 
 .sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
@@ -202,17 +213,19 @@ textarea.fi-form{resize:vertical;min-height:80px}
       <div class="name">Ikeja Electric PLC</div>
       <div class="dept">Orile Agege Undertaking — Akowonjo BU</div>
     </div>
-    <div class="alert alert-error" id="login-err">Incorrect password. Try again.</div>
-    <div class="login-title">Admin Login</div>
-    <div class="login-sub">Enter your admin password to access full controls.</div>
+    <div class="alert alert-error" id="login-err">Invalid username or password.</div>
+    <div class="login-title">Sign In</div>
+    <div class="login-sub">Enter your username and password to continue.</div>
     <div class="fg" style="margin-bottom:12px">
-      <label class="fl">Admin Password</label>
-      <input class="fi-form" type="password" id="admin-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doAdminLogin()">
+      <label class="fl">Username</label>
+      <input class="fi-form" type="text" id="login-username" placeholder="e.g. sanusi" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px;justify-content:center" onclick="doAdminLogin()">Login as Admin</button>
-    <div class="login-divider">or</div>
-    <button class="team-btn" onclick="doTeamLogin()">Continue as Team Member</button>
-    <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:16px">Team members can log and update faults only.</p>
+    <div class="fg" style="margin-bottom:16px">
+      <label class="fl">Password</label>
+      <input class="fi-form" type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px;justify-content:center" onclick="doLogin()">🔐 Sign In</button>
+    <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:16px">Contact your administrator if you forgot your password.</p>
   </div>
 </div>
 
@@ -233,12 +246,17 @@ textarea.fi-form{resize:vertical;min-height:80px}
     <nav class="sidebar-nav">
       <div class="nav-label">Main</div>
       <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</div>
-      <div class="nav-item" onclick="showPage('log',this)"><span class="nav-icon">➕</span>Log Fault</div>
+      <div class="nav-item tech-manager-only" onclick="showPage('log',this)"><span class="nav-icon">➕</span>Log Fault</div>
       <div class="nav-divider"></div>
       <div class="nav-label">Reports</div>
       <div class="nav-item" onclick="showPage('daily',this)"><span class="nav-icon">📋</span>Daily Report</div>
-      <div class="nav-item" onclick="showPage('analytics',this)"><span class="nav-icon">📈</span>Analytics</div>
+      <div class="nav-item manager-admin-only" onclick="showPage('analytics',this)" style="display:none"><span class="nav-icon">📈</span>Analytics</div>
       <div class="nav-item admin-only" onclick="showPage('admin',this)" style="display:none"><span class="nav-icon">⚙️</span>Admin Panel</div>
+      <!-- Pending Tasks (technicians only) -->
+      <div class="pending-section" id="pending-sidebar" style="display:none">
+        <div class="pending-label">🔧 My Pending Tasks <span class="pending-badge-count" id="pending-count">0</span></div>
+        <div id="pending-tasks-list"></div>
+      </div>
     </nav>
     <div class="sidebar-bottom">
       <div class="logout-btn" onclick="logout()">🚪 <span>Sign Out</span></div>
@@ -335,20 +353,26 @@ textarea.fi-form{resize:vertical;min-height:80px}
               <div class="fg"><label class="fl">Time Reported</label><input class="fi-form" type="time" id="r-time"></div>
               <div class="fg"><label class="fl">Reported By <span class="req">*</span></label>
                 <select class="fi-form" id="r-tech">
-                  <option value="">Select technician</option>
+                  <option value="">Select reporter</option>
+                  <optgroup label="── Technicians ──">
                   <option>Sanusi Adamu</option><option>Akeem Alaye</option><option>Odunayo Adebayo</option>
                   <option>Olayinka Aina</option><option>Omotosho Gbenga</option><option>Sulaimon Muritala</option>
                   <option>Adewale Ademola</option><option>Iboro Bassey</option><option>Owoeye Segun</option>
-                  <option>Oluwasegun Banjo</option><option>Other</option>
+                  <option>Oluwasegun Banjo</option><option>Hammed Busayo</option>
+                  </optgroup>
+                  <optgroup label="── Management ──">
+                  <option>OMO</option><option>OMS</option><option>OMC</option><option>UTM</option>
+                  </optgroup>
+                  <option>Other</option>
                 </select>
               </div>
               <div class="fg"><label class="fl">Assigned To</label>
                 <select class="fi-form" id="r-assigned">
-                  <option value="">— same as reporter —</option>
+                  <option value="">— unassigned / TBD —</option>
                   <option>Sanusi Adamu</option><option>Akeem Alaye</option><option>Odunayo Adebayo</option>
                   <option>Olayinka Aina</option><option>Omotosho Gbenga</option><option>Sulaimon Muritala</option>
                   <option>Adewale Ademola</option><option>Iboro Bassey</option><option>Owoeye Segun</option>
-                  <option>Oluwasegun Banjo</option><option>Other</option>
+                  <option>Oluwasegun Banjo</option><option>Hammed Busayo</option><option>Other</option>
                 </select>
               </div>
               <div class="fg"><label class="fl">Substation / Feeder <span class="req">*</span></label>
@@ -368,10 +392,17 @@ textarea.fi-form{resize:vertical;min-height:80px}
                   <option>Loss of supply</option>
                   <option>Low voltage</option>
                   <option>Ruptured fuse — LT</option>
-                  <option>Ruptured fuse — HT</option>
+                  <optgroup label="── Ruptured HT Fuse ──">
+                  <option>Ruptured HT fuse — Red phase</option>
+                  <option>Ruptured HT fuse — Yellow phase</option>
+                  <option>Ruptured HT fuse — Blue phase</option>
+                  <option>Ruptured HT fuse — 1 no. J&amp;P (1-phase unspecified)</option>
+                  <option>Ruptured HT fuse — 2 no. J&amp;P (2-phase unspecified)</option>
+                  </optgroup>
                   <option>Oil leakage</option>
                   <option>Cable / Wire cut</option>
                   <option>Burnt cable</option>
+                  <option>Broken conductor</option>
                   <option>Back feeding</option>
                   <option>Load transfer</option>
                   <option>Pole erection / LT work</option>
@@ -579,7 +610,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
             <option>Sanusi Adamu</option><option>Akeem Alaye</option><option>Odunayo Adebayo</option>
             <option>Olayinka Aina</option><option>Omotosho Gbenga</option><option>Sulaimon Muritala</option>
             <option>Adewale Ademola</option><option>Iboro Bassey</option><option>Owoeye Segun</option>
-            <option>Oluwasegun Banjo</option><option>Other</option>
+            <option>Oluwasegun Banjo</option><option>Hammed Busayo</option><option>Other</option>
           </select>
         </div>
         <div class="fg"><label class="fl">Resolution Notes</label>
@@ -606,10 +637,34 @@ textarea.fi-form{resize:vertical;min-height:80px}
 <script>
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxKN-Lz2y-kV8qpu2hbHnduxXwmWlveoJkBDAF8A1__6Orp2yG2q_4Yg-HPWCwtJrwt/exec';
 
+// ── USER DATABASE ─────────────────────────────────────────
+// roles: 'admin' | 'manager' | 'technician'
+const USERS = [
+  // ── ADMIN ──
+  { username: 'admin',       password: 'IE@Orile2024',  name: 'Administrator',      role: 'admin'       },
+  // ── TECHNICIANS (appear in "Assigned To" dropdown) ──
+  { username: 'sanusi',      password: 'orile01',        name: 'Sanusi Adamu',       role: 'technician'  },
+  { username: 'akeem',       password: 'orile02',        name: 'Akeem Alaye',        role: 'technician'  },
+  { username: 'odunayo',     password: 'orile03',        name: 'Odunayo Adebayo',    role: 'technician'  },
+  { username: 'olayinka',    password: 'orile04',        name: 'Olayinka Aina',      role: 'technician'  },
+  { username: 'omotosho',    password: 'orile05',        name: 'Omotosho Gbenga',    role: 'technician'  },
+  { username: 'sulaimon',    password: 'orile06',        name: 'Sulaimon Muritala',  role: 'technician'  },
+  { username: 'adewale',     password: 'orile07',        name: 'Adewale Ademola',    role: 'technician'  },
+  { username: 'iboro',       password: 'orile08',        name: 'Iboro Bassey',       role: 'technician'  },
+  { username: 'owoeye',      password: 'orile09',        name: 'Owoeye Segun',       role: 'technician'  },
+  { username: 'oluwasegun',  password: 'orile10',        name: 'Oluwasegun Banjo',   role: 'technician'  },
+  { username: 'hammed',      password: 'orile11',        name: 'Hammed Busayo',      role: 'technician'  },
+  // ── MANAGERS (oversee operations, NOT in technician dropdown) ──
+  { username: 'omo',         password: 'omo2024',        name: 'OMO',                role: 'manager'     },
+  { username: 'oms',         password: 'oms2024',        name: 'OMS',                role: 'manager'     },
+  { username: 'omc',         password: 'omc2024',        name: 'OMC',                role: 'manager'     },
+  { username: 'utm',         password: 'utm2024',        name: 'UTM',                role: 'manager'     },
+];
+
 let faults = [];
 let isAdmin = false;
+let currentUser = null; // full user object
 let editingId = null;
-let ADMIN_PASSWORD = 'IE@Orile2024';
 let isSaving = false;
 let lastSyncTime = 0;
 
@@ -702,6 +757,7 @@ async function saveToBin() {
 async function manualSync() {
   await loadFromBin();
   renderStats(); renderTable(); populateDateFilter();
+  renderPendingTasksSidebar();
   if(document.getElementById('page-admin').style.display!=='none') renderAdminTable();
   if(document.getElementById('page-analytics').style.display!=='none') renderAnalytics();
 }
@@ -711,7 +767,7 @@ function startAutoRefresh() {
   setInterval(async () => {
     if (isSaving) return;
     const ok = await loadFromBin();
-    if (ok) { renderStats(); renderTable(); populateDateFilter(); }
+    if (ok) { renderStats(); renderTable(); populateDateFilter(); renderPendingTasksSidebar(); }
     if(document.getElementById('page-admin').style.display!=='none') renderAdminTable();
     if(document.getElementById('page-analytics').style.display!=='none') renderAnalytics();
   }, 45000);
@@ -720,40 +776,73 @@ function startAutoRefresh() {
 function initFirebase() { /* not used */ }
 
 // ── AUTH ─────────────────────────────────────────────────
-function doAdminLogin() {
-  const pass = document.getElementById('admin-pass').value;
-  const storedPass = localStorage.getItem('ie_admin_pass') || ADMIN_PASSWORD;
-  if (pass === storedPass) {
-    isAdmin = true;
-    startApp('Admin');
-  } else {
+function doLogin() {
+  const uname = (document.getElementById('login-username').value||'').trim().toLowerCase();
+  const pass  = document.getElementById('login-password').value;
+  // Check user list (passwords may have been updated in localStorage)
+  const saved = getSavedPasswords();
+  const user  = USERS.find(u => u.username === uname && (saved[uname] || u.password) === pass);
+  if (!user) {
     const err = document.getElementById('login-err');
     err.style.display='block';
     setTimeout(()=>err.style.display='none',3000);
+    return;
   }
+  currentUser = user;
+  isAdmin = user.role === 'admin';
+  startApp(user.name, user.role);
 }
 
-function doTeamLogin() {
-  isAdmin = false;
-  startApp('Team Member');
+// store overridden passwords per username
+function getSavedPasswords() {
+  try { return JSON.parse(localStorage.getItem('ie_passwords')||'{}'); } catch(e){return {};}
+}
+function setSavedPasswords(obj) {
+  try { localStorage.setItem('ie_passwords', JSON.stringify(obj)); } catch(e){}
 }
 
-function startApp(name) {
+function startApp(name, role) {
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='flex';
-  document.getElementById('user-name-display').textContent = isAdmin ? 'Administrator' : name;
+  document.getElementById('user-name-display').textContent = name;
   const badge = document.getElementById('role-badge');
-  badge.textContent = isAdmin ? 'Admin' : 'Team';
-  badge.className = 'user-role ' + (isAdmin ? 'role-admin' : 'role-team');
-  if (isAdmin) document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');
+  const roleLabels = { admin:'Admin', manager:'Manager', technician:'Technician' };
+  badge.textContent = roleLabels[role]||'Team';
+  badge.className = 'user-role role-' + (role==='admin'?'admin':role==='manager'?'manager':'technician');
+
+  // Nav visibility
+  document.querySelectorAll('.admin-only').forEach(el=>el.style.display = role==='admin'?'flex':'none');
+  document.querySelectorAll('.manager-admin-only').forEach(el=>el.style.display = (role==='admin'||role==='manager')?'flex':'none');
+  document.querySelectorAll('.tech-manager-only').forEach(el=>el.style.display = role!=='admin'?'flex':'none');
+
+  // Technician: show pending tasks in sidebar
+  if (role==='technician') {
+    document.getElementById('pending-sidebar').style.display='block';
+  }
+
+  // Pre-select & optionally lock the "Reported By" field for technicians & managers
+  if (role === 'technician' || role === 'manager') {
+    const techSel = document.getElementById('r-tech');
+    techSel.disabled = false;
+    for (let i = 0; i < techSel.options.length; i++) {
+      if (techSel.options[i].text === name) { techSel.selectedIndex = i; break; }
+    }
+    // Lock reporter for both technicians and managers — can't report as someone else
+    techSel.disabled = true;
+  }
+
   loadFaults();
 }
 
 function logout() {
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app').style.display='none';
-  document.getElementById('admin-pass').value='';
+  document.getElementById('login-username').value='';
+  document.getElementById('login-password').value='';
+  currentUser = null; isAdmin = false;
   faults=[];
+  document.getElementById('pending-sidebar').style.display='none';
+  document.getElementById('r-tech').disabled = false;
 }
 
 // ── NAVIGATION ───────────────────────────────────────────
@@ -783,6 +872,7 @@ async function loadFaults() {
   await loadFromBin();
   document.getElementById('tbl-loading').style.display='none';
   renderStats(); renderTable(); populateDateFilter();
+  renderPendingTasksSidebar();
   startAutoRefresh();
 }
 
@@ -845,13 +935,38 @@ function renderTable() {
       <td style="white-space:nowrap;display:flex;gap:4px">
         <button class="btn btn-ghost btn-sm" onclick="openModal('${f.id}')">Update</button>
         <button class="btn btn-success btn-sm" onclick="quickClose('${f.id}')">✓</button>
-        ${isAdmin?`<button class="btn btn-danger btn-sm" onclick="deleteFault('${f.id}')">🗑</button>`:''}
+        ${(currentUser&&currentUser.role==='admin')?`<button class="btn btn-danger btn-sm" onclick="deleteFault('${f.id}')">🗑</button>`:''}
       </td>
     </tr>
   `).join('');
 }
 
-// ── TELEGRAM NOTIFICATION ────────────────────────────────
+// ── PENDING TASKS SIDEBAR (technicians only) ─────────────
+function renderPendingTasksSidebar() {
+  if (!currentUser || currentUser.role !== 'technician') return;
+  const myName = currentUser.name;
+  const myTasks = faults.filter(f =>
+    (f.assigned === myName || f.tech === myName) &&
+    (f.status === 'Pending' || f.status === 'In Progress')
+  ).sort((a,b) => {
+    const po={Urgent:0,Standard:1,PPM:2};
+    return (po[a.priority]||1)-(po[b.priority]||1);
+  });
+  document.getElementById('pending-count').textContent = myTasks.length;
+  const list = document.getElementById('pending-tasks-list');
+  if (!myTasks.length) {
+    list.innerHTML = `<div style="padding:6px 20px;font-size:11px;color:rgba(255,255,255,.35);font-style:italic">No pending tasks 🎉</div>`;
+    return;
+  }
+  list.innerHTML = myTasks.slice(0,8).map(f => `
+    <div class="pending-task-item${f.priority==='Urgent'?' pt-urgent':''}" onclick="openModal('${f.id}')">
+      <div class="pt-dt">${f.dt||f.location||'Task'}</div>
+      <div class="pt-meta">${f.status} · ${f.priority||''}${f.date?' · '+f.date.slice(5):''}</div>
+    </div>
+  `).join('') + (myTasks.length>8?`<div style="padding:4px 20px;font-size:10px;color:rgba(255,255,255,.35)">+${myTasks.length-8} more — see dashboard</div>`:'');
+}
+
+
 const TG_TOKEN = '8591486434:AAE4kcVOdFojfm4es0llfCYhz9kH__HT3HM';
 const TG_CHAT  = '7955128312';
 
@@ -895,7 +1010,8 @@ async function logFault() {
     priority=document.getElementById('r-priority').value;
   const errEl=document.getElementById('log-err');
   if(!d||!tech||!feeder||!ftype||!dt||!loc||!priority){errEl.style.display='block';setTimeout(()=>errEl.style.display='none',3000);return;}
-  const assigned=document.getElementById('r-assigned').value||tech;
+  const assigned = document.getElementById('r-assigned').value ||
+    (currentUser && currentUser.role === 'technician' ? tech : '');
   const fault={
     id:uid(),date:d,time:document.getElementById('r-time').value,tech,feeder,ftype,dt,
     location:loc,phone:document.getElementById('r-phone').value.trim(),cname:document.getElementById('r-cname').value.trim(),
@@ -912,10 +1028,20 @@ async function logFault() {
 }
 
 function clearForm() {
-  ['r-tech','r-feeder','r-ftype','r-priority','r-assigned'].forEach(id=>document.getElementById(id).value='');
+  ['r-feeder','r-ftype','r-priority','r-assigned'].forEach(id=>document.getElementById(id).value='');
   ['r-dt','r-loc','r-phone','r-cname','r-notes','r-time'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('r-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('r-status').value='Pending';
+  // Re-lock reporter for managers / re-select for technicians
+  if (currentUser && (currentUser.role === 'technician' || currentUser.role === 'manager')) {
+    const techSel = document.getElementById('r-tech');
+    for (let i = 0; i < techSel.options.length; i++) {
+      if (techSel.options[i].text === currentUser.name) { techSel.selectedIndex = i; break; }
+    }
+    if (currentUser.role === 'manager' || currentUser.role === 'technician') techSel.disabled = true;
+  } else {
+    document.getElementById('r-tech').value = '';
+  }
 }
 
 // ── UPDATE / DELETE ──────────────────────────────────────
