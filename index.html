@@ -7,9 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
-<!-- Google Sheets Storage -->
-
 <style>
+/* ══════════════════════════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════════════════════════ */
 :root {
   --blue:       #1a56db;
   --blue-light: #e8f0fe;
@@ -117,7 +118,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .fi-search{flex:1;min-width:200px}
 .fi option{background:#fff}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
-.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#1447b3}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover:not(:disabled){background:#1447b3}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed}
 .btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#046944}
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
 .btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#b91c1c}
@@ -155,6 +157,22 @@ textarea.fi-form{resize:vertical;min-height:80px}
 .alert-success{background:var(--green-light);color:var(--green);border:1px solid #a7f3d0}
 .alert-error{background:var(--red-light);color:var(--red);border:1px solid #fca5a5}
 
+/* ── MORE DETAILS COLLAPSIBLE ── */
+.more-details-toggle{
+  width:100%;background:var(--bg);border:1px dashed var(--border2);
+  border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;
+  color:var(--text2);cursor:pointer;text-align:left;
+  display:flex;align-items:center;gap:6px;transition:all .15s;
+  font-family:var(--sans)
+}
+.more-details-toggle:hover{border-color:var(--blue);color:var(--blue);background:#f8fafc}
+.more-details-body{
+  display:none;grid-template-columns:1fr 1fr;gap:16px;
+  margin-top:12px;padding:16px;background:var(--bg);
+  border:1px solid var(--border);border-radius:8px
+}
+.more-details-body.open{display:grid}
+
 /* ── MODAL ── */
 .overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
 .modal{background:#fff;border-radius:14px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
@@ -189,6 +207,18 @@ textarea.fi-form{resize:vertical;min-height:80px}
 .spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ── TOAST ── */
+#_toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;
+  box-shadow:0 4px 20px rgba(0,0,0,.15);display:none;
+  transition:opacity .3s;pointer-events:none
+}
+
+/* ── INLINE CONFIRM ── */
+.inline-confirm{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+.inline-confirm span{font-size:11px;color:var(--text2);white-space:nowrap}
+
 @media(max-width:768px){
   .sidebar{transform:translateX(-240px)}
   .sidebar.open{transform:none}
@@ -196,6 +226,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .form-grid{grid-template-columns:1fr}
   .fg.full{grid-column:1}
+  .more-details-body{grid-template-columns:1fr}
   .menu-toggle{display:flex}
   .topbar{padding:0 16px}
   .main{padding:16px}
@@ -211,7 +242,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
     <div class="login-logo">
       <span class="bolt">⚡</span>
       <div class="name">Ikeja Electric PLC</div>
-      <div class="dept">Orile Agege Undertaking — Akowonjo BU</div>
+      <div class="dept">Orile Agege Undertaking — Akowonjo Business Unit</div>
     </div>
     <div class="alert alert-error" id="login-err">Invalid username or password.</div>
     <div class="login-title">Sign In</div>
@@ -232,7 +263,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
 <!-- ══ APP ════════════════════════════════════════════════ -->
 <div class="app" id="app" style="display:none">
 
-  <!-- SIDEBAR -->
+  <!-- ── SIDEBAR ── -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <div class="co">⚡ Ikeja Electric</div>
@@ -252,7 +283,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
       <div class="nav-item" onclick="showPage('daily',this)"><span class="nav-icon">📋</span>Daily Report</div>
       <div class="nav-item manager-admin-only" onclick="showPage('analytics',this)" style="display:none"><span class="nav-icon">📈</span>Analytics</div>
       <div class="nav-item admin-only" onclick="showPage('admin',this)" style="display:none"><span class="nav-icon">⚙️</span>Admin Panel</div>
-      <!-- Pending Tasks (technicians only) -->
+      <!-- Pending Tasks — shown for technicians only -->
       <div class="pending-section" id="pending-sidebar" style="display:none">
         <div class="pending-label">🔧 My Pending Tasks <span class="pending-badge-count" id="pending-count">0</span></div>
         <div id="pending-tasks-list"></div>
@@ -263,7 +294,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
     </div>
   </div>
 
-  <!-- CONTENT -->
+  <!-- ── CONTENT AREA ── -->
   <div class="content" id="content">
     <div class="topbar">
       <div class="topbar-left">
@@ -281,7 +312,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
 
     <div class="main">
 
-      <!-- DASHBOARD -->
+      <!-- ══ PAGE: DASHBOARD ════════════════════════════════ -->
       <div id="page-dashboard">
         <div class="stats" id="stats-row"></div>
         <div class="card">
@@ -341,7 +372,9 @@ textarea.fi-form{resize:vertical;min-height:80px}
         </div>
       </div>
 
-      <!-- LOG FAULT -->
+      <!-- ══ PAGE: LOG FAULT ════════════════════════════════
+           Field order: when → what/where → urgency → who → [more details]
+      ═══════════════════════════════════════════════════════ -->
       <div id="page-log" style="display:none">
         <div class="card">
           <div class="card-header"><div class="card-title">➕ Log New Fault</div></div>
@@ -349,43 +382,37 @@ textarea.fi-form{resize:vertical;min-height:80px}
             <div class="alert alert-success" id="log-ok">✓ Fault logged successfully and is now visible to all users.</div>
             <div class="alert alert-error" id="log-err">Please fill in all fields marked with *</div>
             <div class="form-grid">
-              <div class="fg"><label class="fl">Date <span class="req">*</span></label><input class="fi-form" type="date" id="r-date"></div>
-              <div class="fg"><label class="fl">Time Reported</label><input class="fi-form" type="time" id="r-time"></div>
-              <div class="fg"><label class="fl">Reported By <span class="req">*</span></label>
-                <select class="fi-form" id="r-tech">
-                  <option value="">Select reporter</option>
-                  <optgroup label="── Technicians ──">
-                  <option>Sanusi Adamu</option><option>Akeem Alaye</option><option>Odunayo Adebayo</option>
-                  <option>Olayinka Aina</option><option>Omotosho Gbenga</option><option>Sulaimon Muritala</option>
-                  <option>Adewale Ademola</option><option>Iboro Bassey</option><option>Owoeye Segun</option>
-                  <option>Oluwasegun Banjo</option><option>Hammed Busayo</option>
-                  </optgroup>
-                  <optgroup label="── Management ──">
-                  <option>OMO</option><option>OMS</option><option>OMC</option><option>UTM</option>
-                  </optgroup>
+
+              <!-- Row 1: When -->
+              <div class="fg">
+                <label class="fl">Date <span class="req">*</span></label>
+                <input class="fi-form" type="date" id="r-date">
+              </div>
+              <div class="fg">
+                <label class="fl">Time Reported <span class="req">*</span></label>
+                <input class="fi-form" type="time" id="r-time">
+              </div>
+
+              <!-- Row 2: What / Where -->
+              <div class="fg">
+                <label class="fl">Substation / Feeder <span class="req">*</span></label>
+                <select class="fi-form" id="r-feeder">
+                  <option value="">Select feeder</option>
+                  <option>AgegeINJ — T1 Abattoir</option>
+                  <option>AgegeINJ — T2 Orile Agege</option>
+                  <option>AgegeINJ — T2 Abule Egba</option>
+                  <option>AgegeINJ — T2 Power Line</option>
+                  <option>AgegeINJ — T3 Tabon Tabon</option>
+                  <option>AgegeINJ — T3 Pen Cinema</option>
+                  <option>AdaranijoINJ — T1 Arigbanla</option>
+                  <option>AdaranijoINJ — T1 NYSC</option>
+                  <option>OgbaTCN — Abeokuta Exp.</option>
+                  <option>MaplewoodINJ</option>
                   <option>Other</option>
                 </select>
               </div>
-              <div class="fg"><label class="fl">Assigned To</label>
-                <select class="fi-form" id="r-assigned">
-                  <option value="">— unassigned / TBD —</option>
-                  <option>Sanusi Adamu</option><option>Akeem Alaye</option><option>Odunayo Adebayo</option>
-                  <option>Olayinka Aina</option><option>Omotosho Gbenga</option><option>Sulaimon Muritala</option>
-                  <option>Adewale Ademola</option><option>Iboro Bassey</option><option>Owoeye Segun</option>
-                  <option>Oluwasegun Banjo</option><option>Hammed Busayo</option><option>Other</option>
-                </select>
-              </div>
-              <div class="fg"><label class="fl">Substation / Feeder <span class="req">*</span></label>
-                <select class="fi-form" id="r-feeder">
-                  <option value="">Select feeder</option>
-                  <option>AgegeINJ — T1 Abattoir</option><option>AgegeINJ — T2 Orile Agege</option>
-                  <option>AgegeINJ — T2 Abule Egba</option><option>AgegeINJ — T2 Power Line</option>
-                  <option>AgegeINJ — T3 Tabon Tabon</option><option>AgegeINJ — T3 Pen Cinema</option>
-                  <option>AdaranijoINJ — T1 Arigbanla</option><option>AdaranijoINJ — T1 NYSC</option>
-                  <option>OgbaTCN — Abeokuta Exp.</option><option>MaplewoodINJ</option><option>Other</option>
-                </select>
-              </div>
-              <div class="fg"><label class="fl">Fault Type <span class="req">*</span></label>
+              <div class="fg">
+                <label class="fl">Fault Type <span class="req">*</span></label>
                 <select class="fi-form" id="r-ftype">
                   <option value="">Select fault type</option>
                   <option>Loss of phase</option>
@@ -393,11 +420,11 @@ textarea.fi-form{resize:vertical;min-height:80px}
                   <option>Low voltage</option>
                   <option>Ruptured fuse — LT</option>
                   <optgroup label="── Ruptured HT Fuse ──">
-                  <option>Ruptured HT fuse — Red phase</option>
-                  <option>Ruptured HT fuse — Yellow phase</option>
-                  <option>Ruptured HT fuse — Blue phase</option>
-                  <option>Ruptured HT fuse — 1 no. J&amp;P (1-phase unspecified)</option>
-                  <option>Ruptured HT fuse — 2 no. J&amp;P (2-phase unspecified)</option>
+                    <option>Ruptured HT fuse — Red phase</option>
+                    <option>Ruptured HT fuse — Yellow phase</option>
+                    <option>Ruptured HT fuse — Blue phase</option>
+                    <option>Ruptured HT fuse — 1 no. J&amp;P (1-phase unspecified)</option>
+                    <option>Ruptured HT fuse — 2 no. J&amp;P (2-phase unspecified)</option>
                   </optgroup>
                   <option>Oil leakage</option>
                   <option>Cable / Wire cut</option>
@@ -413,36 +440,86 @@ textarea.fi-form{resize:vertical;min-height:80px}
                   <option>Others</option>
                 </select>
               </div>
-              <div class="fg full"><label class="fl">DT Name <span class="req">*</span></label>
+
+              <!-- Row 3: DT Name (full-width) -->
+              <div class="fg full">
+                <label class="fl">DT Name <span class="req">*</span></label>
                 <input class="fi-form" type="text" id="r-dt" placeholder="e.g. Pipeline Street Pole 6, Oshobu Landed DT, Agunbiade Pole 5 HVDS">
               </div>
-              <div class="fg full"><label class="fl">Exact Location / Address <span class="req">*</span></label>
+
+              <!-- Row 4: Location (full-width) -->
+              <div class="fg full">
+                <label class="fl">Exact Location / Address <span class="req">*</span></label>
                 <input class="fi-form" type="text" id="r-loc" placeholder="e.g. No. 57 Ladoje Street / Opposite Elere Police Station">
               </div>
-              <div class="fg"><label class="fl">Customer Contact</label><input class="fi-form" type="tel" id="r-phone" placeholder="Leave blank if PPM"></div>
-              <div class="fg"><label class="fl">Customer Name</label><input class="fi-form" type="text" id="r-cname" placeholder="Optional"></div>
-              <div class="fg"><label class="fl">Priority <span class="req">*</span></label>
+
+              <!-- Row 5: Priority + Status -->
+              <div class="fg">
+                <label class="fl">Priority <span class="req">*</span></label>
                 <select class="fi-form" id="r-priority">
                   <option value="">Select priority</option>
-                  <option>Urgent</option><option>Standard</option><option>PPM</option>
+                  <option>Urgent</option>
+                  <option>Standard</option>
+                  <option>PPM</option>
                 </select>
               </div>
-              <div class="fg"><label class="fl">Initial Status</label>
-                <select class="fi-form" id="r-status"><option>Pending</option><option>In Progress</option></select>
+              <div class="fg">
+                <label class="fl">Initial Status</label>
+                <select class="fi-form" id="r-status">
+                  <option>Pending</option>
+                  <option>In Progress</option>
+                </select>
               </div>
-              <div class="fg full"><label class="fl">Additional Notes</label>
-                <textarea class="fi-form" id="r-notes" placeholder="e.g. cold room affected, MD customer, landlord on site, treat as urgent"></textarea>
+
+              <!-- Row 6: Assigned To + Reported By -->
+              <div class="fg">
+                <label class="fl">Assigned To</label>
+                <!-- Populated dynamically from TECHNICIANS array -->
+                <select class="fi-form" id="r-assigned">
+                  <option value="">— unassigned / TBD —</option>
+                </select>
               </div>
-            </div>
+              <div class="fg">
+                <label class="fl">Reported By <span class="req">*</span></label>
+                <!-- Populated dynamically from TECHNICIANS + managers -->
+                <select class="fi-form" id="r-tech">
+                  <option value="">Select reporter</option>
+                </select>
+              </div>
+
+              <!-- Row 7: More Details (collapsible) -->
+              <div class="fg full">
+                <button type="button" class="more-details-toggle" id="more-details-toggle"
+                  onclick="toggleMoreDetails()">
+                  ▶ More Details — Customer &amp; Notes (optional)
+                </button>
+                <div class="more-details-body" id="more-details-body">
+                  <div class="fg">
+                    <label class="fl">Customer Contact</label>
+                    <input class="fi-form" type="tel" id="r-phone" placeholder="Leave blank if PPM">
+                  </div>
+                  <div class="fg">
+                    <label class="fl">Customer Name</label>
+                    <input class="fi-form" type="text" id="r-cname" placeholder="Optional">
+                  </div>
+                  <div class="fg full">
+                    <label class="fl">Additional Notes</label>
+                    <textarea class="fi-form" id="r-notes" placeholder="e.g. cold room affected, MD customer, landlord on site, treat as urgent"></textarea>
+                  </div>
+                </div>
+              </div>
+
+            </div><!-- /form-grid -->
+
             <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
-              <button class="btn btn-primary" onclick="logFault()">+ Submit Fault</button>
+              <button class="btn btn-primary" id="submit-btn" onclick="logFault()">+ Submit Fault</button>
               <button class="btn btn-ghost" onclick="clearForm()">Clear Form</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- DAILY REPORT -->
+      <!-- ══ PAGE: DAILY REPORT ══════════════════════════════ -->
       <div id="page-daily" style="display:none">
         <div class="card">
           <div class="card-header"><div class="card-title">📋 Daily Work Order Report</div></div>
@@ -469,7 +546,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
         </div>
       </div>
 
-      <!-- ADMIN PANEL -->
+      <!-- ══ PAGE: ADMIN PANEL ═══════════════════════════════ -->
       <div id="page-admin" style="display:none">
         <div class="card" style="margin-bottom:16px">
           <div class="card-header"><div class="card-title">⚙️ Admin Controls</div></div>
@@ -497,10 +574,10 @@ textarea.fi-form{resize:vertical;min-height:80px}
         </div>
       </div>
 
-      <!-- ANALYTICS PAGE -->
+      <!-- ══ PAGE: ANALYTICS ════════════════════════════════ -->
       <div id="page-analytics" style="display:none">
 
-        <!-- Summary KPI row -->
+        <!-- KPI Summary Row -->
         <div class="stats" id="analytics-kpis" style="margin-bottom:24px"></div>
 
         <!-- Row 1: Faults by Feeder + Fault Types -->
@@ -542,6 +619,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
                 <div style="font-size:11px;color:var(--text3);margin-top:2px">Daily fault volume over time</div>
               </div>
               <select class="fi btn-sm" id="an-trend-days" onchange="renderAnalytics()" style="font-size:12px;padding:5px 10px">
+                <option value="7">Last 7 days</option>
                 <option value="14">Last 14 days</option>
                 <option value="30" selected>Last 30 days</option>
                 <option value="60">Last 60 days</option>
@@ -569,7 +647,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
           </div>
         </div>
 
-        <!-- Top Issues Table -->
+        <!-- Top 5 Faulted Feeders Table -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">🏆 Top 5 Most Faulted Feeders</div>
@@ -589,7 +667,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
   </div><!-- /content -->
 </div><!-- /app -->
 
-<!-- UPDATE MODAL -->
+<!-- ══ UPDATE MODAL ═══════════════════════════════════════ -->
 <div class="overlay" id="modal" style="display:none" onclick="modalClickOut(event)">
   <div class="modal">
     <div class="modal-hdr">
@@ -601,22 +679,25 @@ textarea.fi-form{resize:vertical;min-height:80px}
     </div>
     <div class="modal-body">
       <div class="form-grid" style="grid-template-columns:1fr">
-        <div class="fg"><label class="fl">Status</label>
-          <select class="fi-form" id="m-status"><option>Pending</option><option>In Progress</option><option>Completed</option></select>
-        </div>
-        <div class="fg"><label class="fl">Reassign To</label>
-          <select class="fi-form" id="m-tech">
-            <option value="">— no change —</option>
-            <option>Sanusi Adamu</option><option>Akeem Alaye</option><option>Odunayo Adebayo</option>
-            <option>Olayinka Aina</option><option>Omotosho Gbenga</option><option>Sulaimon Muritala</option>
-            <option>Adewale Ademola</option><option>Iboro Bassey</option><option>Owoeye Segun</option>
-            <option>Oluwasegun Banjo</option><option>Hammed Busayo</option><option>Other</option>
+        <div class="fg">
+          <label class="fl">Status</label>
+          <select class="fi-form" id="m-status">
+            <option>Pending</option><option>In Progress</option><option>Completed</option>
           </select>
         </div>
-        <div class="fg"><label class="fl">Resolution Notes</label>
+        <div class="fg">
+          <label class="fl">Reassign To</label>
+          <!-- Populated dynamically from TECHNICIANS array -->
+          <select class="fi-form" id="m-tech">
+            <option value="">— no change —</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Resolution Notes</label>
           <textarea class="fi-form" id="m-notes" placeholder="Describe how the fault was resolved or current situation..."></textarea>
         </div>
-        <div class="fg"><label class="fl">Follow-up Required?</label>
+        <div class="fg">
+          <label class="fl">Follow-up Required?</label>
           <select class="fi-form" id="m-followup">
             <option>No — fault fully cleared</option>
             <option>Yes — partial fix, needs revisit</option>
@@ -633,8 +714,15 @@ textarea.fi-form{resize:vertical;min-height:80px}
   </div>
 </div>
 
-<!-- JSONBIN CONFIG -->
+<!-- ══ TOAST (inline feedback, no alert() dialogs) ════════ -->
+<div id="_toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════ -->
 <script>
+
+// ── GOOGLE SHEETS ENDPOINT ────────────────────────────────
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxKN-Lz2y-kV8qpu2hbHnduxXwmWlveoJkBDAF8A1__6Orp2yG2q_4Yg-HPWCwtJrwt/exec';
 
 // ── USER DATABASE ─────────────────────────────────────────
@@ -642,7 +730,8 @@ const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxKN-Lz2y-kV8qpu2hbHn
 const USERS = [
   // ── ADMIN ──
   { username: 'admin',       password: 'IE@Orile2024',  name: 'Administrator',      role: 'admin'       },
-  // ── TECHNICIANS (appear in "Assigned To" dropdown) ──
+  // ── TECHNICIANS — these populate every "Assigned To" / "Reported By" / "Reassign" dropdown ──
+  // To add or remove staff: edit ONLY this list. All dropdowns update automatically.
   { username: 'sanusi',      password: 'orile01',        name: 'Sanusi Adamu',       role: 'technician'  },
   { username: 'akeem',       password: 'orile02',        name: 'Akeem Alaye',        role: 'technician'  },
   { username: 'odunayo',     password: 'orile03',        name: 'Odunayo Adebayo',    role: 'technician'  },
@@ -654,39 +743,117 @@ const USERS = [
   { username: 'owoeye',      password: 'orile09',        name: 'Owoeye Segun',       role: 'technician'  },
   { username: 'oluwasegun',  password: 'orile10',        name: 'Oluwasegun Banjo',   role: 'technician'  },
   { username: 'hammed',      password: 'orile11',        name: 'Hammed Busayo',      role: 'technician'  },
-  // ── MANAGERS (oversee operations, NOT in technician dropdown) ──
+  // ── MANAGERS (oversee operations; appear in "Reported By" but NOT in "Assigned To") ──
   { username: 'omo',         password: 'omo2024',        name: 'OMO',                role: 'manager'     },
   { username: 'oms',         password: 'oms2024',        name: 'OMS',                role: 'manager'     },
   { username: 'omc',         password: 'omc2024',        name: 'OMC',                role: 'manager'     },
   { username: 'utm',         password: 'utm2024',        name: 'UTM',                role: 'manager'     },
 ];
 
-let faults = [];
-let isAdmin = false;
-let currentUser = null; // full user object
-let editingId = null;
-let isSaving = false;
+// ── SINGLE SOURCE OF TRUTH: TECHNICIAN LIST ──────────────
+// Derived automatically from USERS — never edit this; edit USERS above instead.
+const TECHNICIANS = USERS.filter(u => u.role === 'technician').map(u => u.name);
+
+// ── GLOBAL STATE ─────────────────────────────────────────
+let faults     = [];
+let isAdmin    = false;
+let currentUser = null;   // full user object
+let editingId  = null;
+let isSaving   = false;
 let lastSyncTime = 0;
 
-// ── LOCAL STORAGE ────────────────────────────────────────
-function getLocalFaults() {
-  try { const s=localStorage.getItem('ie_faults'); return s?JSON.parse(s):[]; } catch(e){return [];}
-}
-function setLocalFaults(data) {
-  try { localStorage.setItem('ie_faults', JSON.stringify(data)); } catch(e){}
+// ── XSS GUARD ─────────────────────────────────────────────
+// Escape user-supplied strings before inserting into innerHTML.
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// ── SYNC STATUS UI ───────────────────────────────────────
+// ── TOAST NOTIFICATION (replaces all alert() calls) ───────
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('_toast');
+  t.textContent = msg;
+  t.style.background = type === 'success' ? 'var(--green-light)' : 'var(--red-light)';
+  t.style.color      = type === 'success' ? 'var(--green)'       : 'var(--red)';
+  t.style.border     = `1px solid ${type === 'success' ? '#a7f3d0' : '#fca5a5'}`;
+  t.style.opacity    = '1';
+  t.style.display    = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.style.opacity = '0';
+    setTimeout(() => { t.style.display = 'none'; }, 300);
+  }, 3000);
+}
+
+// ── POPULATE ALL TECH DROPDOWNS FROM SINGLE ARRAY ─────────
+// Call once after DOM is ready. Updates r-tech, r-assigned, and m-tech.
+function populateTechDropdowns() {
+
+  // Helper: create <option> from a name string
+  function opt(name, val) {
+    const o = document.createElement('option');
+    o.textContent = name;
+    if (val !== undefined) o.value = val;
+    return o;
+  }
+
+  // ── r-tech: "Reported By" — all technicians + managers + Other ──
+  const rTech = document.getElementById('r-tech');
+  rTech.innerHTML = '';
+  rTech.appendChild(opt('Select reporter', ''));
+  const techGrp = document.createElement('optgroup');
+  techGrp.label = '── Technicians ──';
+  TECHNICIANS.forEach(name => techGrp.appendChild(opt(name)));
+  rTech.appendChild(techGrp);
+  const mgrGrp = document.createElement('optgroup');
+  mgrGrp.label = '── Management ──';
+  USERS.filter(u => u.role === 'manager').forEach(u => mgrGrp.appendChild(opt(u.name)));
+  rTech.appendChild(mgrGrp);
+  rTech.appendChild(opt('Other'));
+
+  // ── r-assigned: "Assigned To" — technicians only + Other ──
+  const rAssigned = document.getElementById('r-assigned');
+  rAssigned.innerHTML = '';
+  rAssigned.appendChild(opt('— unassigned / TBD —', ''));
+  TECHNICIANS.forEach(name => rAssigned.appendChild(opt(name)));
+  rAssigned.appendChild(opt('Other'));
+
+  // ── m-tech: "Reassign To" (modal) — technicians only + Other ──
+  const mTech = document.getElementById('m-tech');
+  mTech.innerHTML = '';
+  mTech.appendChild(opt('— no change —', ''));
+  TECHNICIANS.forEach(name => mTech.appendChild(opt(name)));
+  mTech.appendChild(opt('Other'));
+}
+
+// ── MORE DETAILS TOGGLE ───────────────────────────────────
+function toggleMoreDetails() {
+  const body    = document.getElementById('more-details-body');
+  const toggle  = document.getElementById('more-details-toggle');
+  const isOpen  = body.classList.toggle('open');
+  toggle.textContent = isOpen
+    ? '▼ Hide Extra Details'
+    : '▶ More Details — Customer & Notes (optional)';
+}
+
+// ── LOCAL STORAGE ─────────────────────────────────────────
+function getLocalFaults() {
+  try { const s = localStorage.getItem('ie_faults'); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+}
+function setLocalFaults(data) {
+  try { localStorage.setItem('ie_faults', JSON.stringify(data)); } catch(e) {}
+}
+
+// ── SYNC STATUS UI ────────────────────────────────────────
 function setSyncStatus(msg, color) {
   const dot  = document.getElementById('sync-dot');
   const text = document.getElementById('sync-text');
-  if (!dot||!text) return;
+  if (!dot || !text) return;
   dot.style.background = color;
   text.style.color     = color;
   text.textContent     = msg;
 }
 
-// ── GOOGLE SHEETS API ────────────────────────────────────
+// ── GOOGLE SHEETS API ─────────────────────────────────────
 async function sheetGET() {
   const res = await fetch(SHEET_URL, { method: 'GET' });
   if (!res.ok) throw new Error('GET ' + res.status);
@@ -704,15 +871,15 @@ async function sheetPUT(faultsData) {
   return true;
 }
 
-// ── MERGE — never lose data ──────────────────────────────
+// ── MERGE — never lose data ───────────────────────────────
 function mergeFaults(remote, local) {
   const map = {};
-  local.forEach(f  => { if(f&&f.id) map[f.id]=f; });
-  remote.forEach(f => { if(f&&f.id) map[f.id]=f; });
-  return Object.values(map).sort((a,b)=>(b.loggedAt||'').localeCompare(a.loggedAt||''));
+  local.forEach(f  => { if (f && f.id) map[f.id] = f; });
+  remote.forEach(f => { if (f && f.id) map[f.id] = f; });
+  return Object.values(map).sort((a, b) => (b.loggedAt || '').localeCompare(a.loggedAt || ''));
 }
 
-// ── LOAD FROM GOOGLE SHEETS ──────────────────────────────
+// ── LOAD FROM GOOGLE SHEETS ───────────────────────────────
 async function loadFromBin() {
   setSyncStatus('Syncing…', '#c27803');
   try {
@@ -736,7 +903,7 @@ async function loadFromBin() {
   }
 }
 
-// ── SAVE TO GOOGLE SHEETS ────────────────────────────────
+// ── SAVE TO GOOGLE SHEETS ─────────────────────────────────
 async function saveToBin() {
   if (isSaving) return;
   isSaving = true;
@@ -753,39 +920,38 @@ async function saveToBin() {
   }
 }
 
-// ── MANUAL SYNC BUTTON ───────────────────────────────────
+// ── MANUAL SYNC BUTTON ────────────────────────────────────
 async function manualSync() {
   await loadFromBin();
   renderStats(); renderTable(); populateDateFilter();
   renderPendingTasksSidebar();
-  if(document.getElementById('page-admin').style.display!=='none') renderAdminTable();
-  if(document.getElementById('page-analytics').style.display!=='none') renderAnalytics();
+  if (document.getElementById('page-admin').style.display   !== 'none') renderAdminTable();
+  if (document.getElementById('page-analytics').style.display !== 'none') renderAnalytics();
+  if (document.getElementById('page-daily').style.display   !== 'none') generateReport();
 }
 
-// ── AUTO REFRESH every 45s ───────────────────────────────
+// ── AUTO REFRESH every 45 seconds ────────────────────────
 function startAutoRefresh() {
   setInterval(async () => {
     if (isSaving) return;
     const ok = await loadFromBin();
     if (ok) { renderStats(); renderTable(); populateDateFilter(); renderPendingTasksSidebar(); }
-    if(document.getElementById('page-admin').style.display!=='none') renderAdminTable();
-    if(document.getElementById('page-analytics').style.display!=='none') renderAnalytics();
+    if (document.getElementById('page-admin').style.display   !== 'none') renderAdminTable();
+    if (document.getElementById('page-analytics').style.display !== 'none') renderAnalytics();
+    if (document.getElementById('page-daily').style.display   !== 'none') generateReport();
   }, 45000);
 }
 
-function initFirebase() { /* not used */ }
-
-// ── AUTH ─────────────────────────────────────────────────
+// ── AUTH ──────────────────────────────────────────────────
 function doLogin() {
-  const uname = (document.getElementById('login-username').value||'').trim().toLowerCase();
+  const uname = (document.getElementById('login-username').value || '').trim().toLowerCase();
   const pass  = document.getElementById('login-password').value;
-  // Check user list (passwords may have been updated in localStorage)
   const saved = getSavedPasswords();
   const user  = USERS.find(u => u.username === uname && (saved[uname] || u.password) === pass);
   if (!user) {
     const err = document.getElementById('login-err');
-    err.style.display='block';
-    setTimeout(()=>err.style.display='none',3000);
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 3000);
     return;
   }
   currentUser = user;
@@ -793,84 +959,85 @@ function doLogin() {
   startApp(user.name, user.role);
 }
 
-// store overridden passwords per username
+// Store per-username password overrides
 function getSavedPasswords() {
-  try { return JSON.parse(localStorage.getItem('ie_passwords')||'{}'); } catch(e){return {};}
+  try { return JSON.parse(localStorage.getItem('ie_passwords') || '{}'); } catch(e) { return {}; }
 }
 function setSavedPasswords(obj) {
-  try { localStorage.setItem('ie_passwords', JSON.stringify(obj)); } catch(e){}
+  try { localStorage.setItem('ie_passwords', JSON.stringify(obj)); } catch(e) {}
 }
 
 function startApp(name, role) {
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('app').style.display='flex';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
   document.getElementById('user-name-display').textContent = name;
   const badge = document.getElementById('role-badge');
-  const roleLabels = { admin:'Admin', manager:'Manager', technician:'Technician' };
-  badge.textContent = roleLabels[role]||'Team';
-  badge.className = 'user-role role-' + (role==='admin'?'admin':role==='manager'?'manager':'technician');
+  const roleLabels = { admin: 'Admin', manager: 'Manager', technician: 'Technician' };
+  badge.textContent  = roleLabels[role] || 'Team';
+  badge.className = 'user-role role-' + (role === 'admin' ? 'admin' : role === 'manager' ? 'manager' : 'technician');
 
-  // Nav visibility
-  document.querySelectorAll('.admin-only').forEach(el=>el.style.display = role==='admin'?'flex':'none');
-  document.querySelectorAll('.manager-admin-only').forEach(el=>el.style.display = (role==='admin'||role==='manager')?'flex':'none');
-  document.querySelectorAll('.tech-manager-only').forEach(el=>el.style.display = role!=='admin'?'flex':'none');
+  // Navigation visibility by role
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = role === 'admin' ? 'flex' : 'none');
+  document.querySelectorAll('.manager-admin-only').forEach(el => el.style.display = (role === 'admin' || role === 'manager') ? 'flex' : 'none');
+  document.querySelectorAll('.tech-manager-only').forEach(el => el.style.display = role !== 'admin' ? 'flex' : 'none');
 
-  // Technician: show pending tasks in sidebar
-  if (role==='technician') {
-    document.getElementById('pending-sidebar').style.display='block';
+  // Show pending tasks sidebar for technicians
+  if (role === 'technician') {
+    document.getElementById('pending-sidebar').style.display = 'block';
   }
 
-  // Pre-select & optionally lock the "Reported By" field for technicians & managers
+  // Pre-select and lock "Reported By" for non-admin users
   if (role === 'technician' || role === 'manager') {
     const techSel = document.getElementById('r-tech');
     techSel.disabled = false;
     for (let i = 0; i < techSel.options.length; i++) {
       if (techSel.options[i].text === name) { techSel.selectedIndex = i; break; }
     }
-    // Lock reporter for both technicians and managers — can't report as someone else
-    techSel.disabled = true;
+    techSel.disabled = true; // Lock: can't report as someone else
   }
 
   loadFaults();
 }
 
 function logout() {
-  document.getElementById('login-screen').style.display='flex';
-  document.getElementById('app').style.display='none';
-  document.getElementById('login-username').value='';
-  document.getElementById('login-password').value='';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
   currentUser = null; isAdmin = false;
-  faults=[];
-  document.getElementById('pending-sidebar').style.display='none';
+  faults = [];
+  document.getElementById('pending-sidebar').style.display = 'none';
   document.getElementById('r-tech').disabled = false;
 }
 
-// ── NAVIGATION ───────────────────────────────────────────
+// ── NAVIGATION ────────────────────────────────────────────
 function showPage(p, navEl) {
-  ['dashboard','log','daily','admin','analytics'].forEach(x=>{
-    document.getElementById('page-'+x).style.display = x===p?'block':'none';
+  ['dashboard','log','daily','admin','analytics'].forEach(x => {
+    document.getElementById('page-' + x).style.display = x === p ? 'block' : 'none';
   });
-  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
-  if(navEl) navEl.classList.add('active');
-  const titles = {dashboard:'Dashboard',log:'Log Fault',daily:'Daily Report',admin:'Admin Panel',analytics:'Analytics'};
-  document.getElementById('page-title').textContent = titles[p]||'';
-  if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
-  if(p==='dashboard') renderTable();
-  if(p==='admin') renderAdminTable();
-  if(p==='analytics') renderAnalytics();
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+  const titles = { dashboard:'Dashboard', log:'Log Fault', daily:'Daily Report', admin:'Admin Panel', analytics:'Analytics' };
+  document.getElementById('page-title').textContent = titles[p] || '';
+  if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+  if (p === 'dashboard') renderTable();
+  if (p === 'admin')     renderAdminTable();
+  if (p === 'analytics') renderAnalytics();
+  // Auto-generate report with today's date when navigating to daily page
+  if (p === 'daily' && faults.length) generateReport();
 }
 
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-// ── DATA ─────────────────────────────────────────────────
-function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+// ── DATA UTILITIES ────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
 async function loadFaults() {
-  document.getElementById('tbl-loading').style.display='block';
+  document.getElementById('tbl-loading').style.display = 'block';
   await loadFromBin();
-  document.getElementById('tbl-loading').style.display='none';
+  document.getElementById('tbl-loading').style.display = 'none';
   renderStats(); renderTable(); populateDateFilter();
   renderPendingTasksSidebar();
   startAutoRefresh();
@@ -880,93 +1047,127 @@ async function saveFaultsLocal() {
   await saveToBin();
 }
 
+// ── STATS ROW ─────────────────────────────────────────────
+// Note: only computed numbers go into innerHTML here — no user data, no XSS risk.
 function renderStats() {
-  const t=faults.length, p=faults.filter(f=>f.status==='Pending').length,
-    ip=faults.filter(f=>f.status==='In Progress').length, d=faults.filter(f=>f.status==='Completed').length;
-  document.getElementById('stats-row').innerHTML=`
+  const t  = faults.length;
+  const p  = faults.filter(f => f.status === 'Pending').length;
+  const ip = faults.filter(f => f.status === 'In Progress').length;
+  const d  = faults.filter(f => f.status === 'Completed').length;
+  document.getElementById('stats-row').innerHTML = `
     <div class="stat"><div class="stat-icon si-blue">📊</div><div class="stat-info"><div class="label">Total Faults</div><div class="val sv-blue">${t}</div><div class="sub">All time</div></div></div>
     <div class="stat"><div class="stat-icon si-red">⚠️</div><div class="stat-info"><div class="label">Pending</div><div class="val sv-red">${p}</div><div class="sub">Needs attention</div></div></div>
     <div class="stat"><div class="stat-icon si-yellow">🔧</div><div class="stat-info"><div class="label">In Progress</div><div class="val sv-yellow">${ip}</div><div class="sub">Being worked on</div></div></div>
     <div class="stat"><div class="stat-icon si-green">✅</div><div class="stat-info"><div class="label">Completed</div><div class="val sv-green">${d}</div><div class="sub">Resolved</div></div></div>
   `;
-  document.getElementById('admin-total') && (document.getElementById('admin-total').textContent=t);
+  const adminTotal = document.getElementById('admin-total');
+  if (adminTotal) adminTotal.textContent = t;
 }
 
+// ── DATE FILTER DROPDOWN ──────────────────────────────────
 function populateDateFilter() {
-  const sel=document.getElementById('f-date'), cur=sel.value;
-  const dates=[...new Set(faults.map(f=>f.date).filter(Boolean))].sort().reverse();
-  sel.innerHTML='<option value="">All Dates</option>'+dates.map(d=>`<option${d===cur?' selected':''}>${d}</option>`).join('');
+  const sel  = document.getElementById('f-date');
+  const cur  = sel.value;
+  const dates = [...new Set(faults.map(f => f.date).filter(Boolean))].sort().reverse();
+  // Safe: dates are date strings (yyyy-mm-dd), not arbitrary user HTML
+  sel.innerHTML = '<option value="">All Dates</option>' +
+    dates.map(d => `<option${d === cur ? ' selected' : ''}>${esc(d)}</option>`).join('');
 }
 
-// ── TABLE ────────────────────────────────────────────────
+// ── FAULT TABLE ───────────────────────────────────────────
+// All user data is escaped with esc() before insertion into innerHTML.
 function renderTable() {
-  const search=(document.getElementById('search').value||'').toLowerCase();
-  const fs=document.getElementById('f-status').value;
-  const fp=document.getElementById('f-priority').value;
-  const ff=document.getElementById('f-feeder').value;
-  const fd=document.getElementById('f-date').value;
-  let filtered=faults.filter(f=>{
-    const txt=[f.dt,f.location,f.tech,f.assigned,f.feeder,f.ftype,f.cname,f.phone].join(' ').toLowerCase();
-    return(!search||txt.includes(search))&&(!fs||f.status===fs)&&(!fp||f.priority===fp)&&(!ff||f.feeder===ff)&&(!fd||f.date===fd);
+  const search = (document.getElementById('search').value || '').toLowerCase();
+  const fs = document.getElementById('f-status').value;
+  const fp = document.getElementById('f-priority').value;
+  const ff = document.getElementById('f-feeder').value;
+  const fd = document.getElementById('f-date').value;
+
+  let filtered = faults.filter(f => {
+    const txt = [f.dt, f.location, f.tech, f.assigned, f.feeder, f.ftype, f.cname, f.phone].join(' ').toLowerCase();
+    return (!search || txt.includes(search)) && (!fs || f.status === fs) &&
+           (!fp || f.priority === fp) && (!ff || f.feeder === ff) && (!fd || f.date === fd);
   });
-  const tbody=document.getElementById('fault-tbody');
-  const empty=document.getElementById('empty-state');
-  const loading=document.getElementById('tbl-loading');
-  loading.style.display='none';
-  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  const pc={Urgent:'bdg-urgent',Standard:'bdg-standard',PPM:'bdg-ppm'};
-  const sc={Pending:'bdg-pending','In Progress':'bdg-progress',Completed:'bdg-completed'};
-  const sorted=filtered.slice().sort((a,b)=>{
-    const po={Urgent:0,Standard:1,PPM:2};
-    if((po[a.priority]||1)!==(po[b.priority]||1)) return (po[a.priority]||1)-(po[b.priority]||1);
-    return (b.date||'').localeCompare(a.date||'');
+
+  const tbody   = document.getElementById('fault-tbody');
+  const empty   = document.getElementById('empty-state');
+  const loading = document.getElementById('tbl-loading');
+  loading.style.display = 'none';
+
+  if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const pc = { Urgent:'bdg-urgent', Standard:'bdg-standard', PPM:'bdg-ppm' };
+  const sc = { Pending:'bdg-pending', 'In Progress':'bdg-progress', Completed:'bdg-completed' };
+
+  const sorted = filtered.slice().sort((a, b) => {
+    const po = { Urgent:0, Standard:1, PPM:2 };
+    if ((po[a.priority] || 1) !== (po[b.priority] || 1)) return (po[a.priority] || 1) - (po[b.priority] || 1);
+    return (b.date || '').localeCompare(a.date || '');
   });
-  tbody.innerHTML=sorted.map((f,i)=>`
+
+  tbody.innerHTML = sorted.map((f, i) => {
+    const adminDelete = (currentUser && currentUser.role === 'admin')
+      ? `<button class="btn btn-danger btn-sm" onclick="requestDelete('${esc(f.id)}')">🗑</button>`
+      : '';
+    return `
     <tr>
-      <td style="font-family:var(--mono);color:var(--text3);font-size:11px">${i+1}</td>
-      <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${f.date||'—'}${f.time?'<br><span style="color:var(--text3)">'+f.time+'</span>':''}</td>
-      <td style="font-size:11px;color:var(--text2);max-width:130px">${f.feeder||'—'}</td>
-      <td><div style="font-weight:600">${f.dt||'—'}</div><div style="font-size:11px;color:var(--text3)">${f.location||''}</div>${f.phone?`<div style="font-size:11px;color:var(--blue)">${f.phone}${f.cname?' · '+f.cname:''}</div>`:''}</td>
-      <td style="font-size:12px">${f.ftype||'—'}</td>
-      <td><span class="bdg ${pc[f.priority]||'bdg-standard'}">${f.priority||'—'}</span></td>
-      <td><span class="bdg ${sc[f.status]||'bdg-pending'}">${f.status||'Pending'}</span></td>
-      <td style="font-size:12px">${f.assigned||f.tech||'—'}</td>
-      <td style="white-space:nowrap;display:flex;gap:4px">
-        <button class="btn btn-ghost btn-sm" onclick="openModal('${f.id}')">Update</button>
-        <button class="btn btn-success btn-sm" onclick="quickClose('${f.id}')">✓</button>
-        ${(currentUser&&currentUser.role==='admin')?`<button class="btn btn-danger btn-sm" onclick="deleteFault('${f.id}')">🗑</button>`:''}
+      <td style="font-family:var(--mono);color:var(--text3);font-size:11px">${i + 1}</td>
+      <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">
+        ${esc(f.date) || '—'}
+        ${f.time ? `<br><span style="color:var(--text3)">${esc(f.time)}</span>` : ''}
       </td>
-    </tr>
-  `).join('');
+      <td style="font-size:11px;color:var(--text2);max-width:130px">${esc(f.feeder) || '—'}</td>
+      <td>
+        <div style="font-weight:600">${esc(f.dt) || '—'}</div>
+        <div style="font-size:11px;color:var(--text3)">${esc(f.location) || ''}</div>
+        ${f.phone ? `<div style="font-size:11px;color:var(--blue)">${esc(f.phone)}${f.cname ? ' · ' + esc(f.cname) : ''}</div>` : ''}
+      </td>
+      <td style="font-size:12px">${esc(f.ftype) || '—'}</td>
+      <td><span class="bdg ${pc[f.priority] || 'bdg-standard'}">${esc(f.priority) || '—'}</span></td>
+      <td><span class="bdg ${sc[f.status] || 'bdg-pending'}">${esc(f.status) || 'Pending'}</span></td>
+      <td style="font-size:12px">${esc(f.assigned || f.tech) || '—'}</td>
+      <td id="actions-${esc(f.id)}" style="white-space:nowrap;display:flex;gap:4px;align-items:center">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('${esc(f.id)}')">Update</button>
+        <button class="btn btn-success btn-sm" onclick="requestQuickClose('${esc(f.id)}')">✓</button>
+        ${adminDelete}
+      </td>
+    </tr>`;
+  }).join('');
 }
 
-// ── PENDING TASKS SIDEBAR (technicians only) ─────────────
+// ── PENDING TASKS SIDEBAR ─────────────────────────────────
 function renderPendingTasksSidebar() {
   if (!currentUser || currentUser.role !== 'technician') return;
-  const myName = currentUser.name;
+  const myName  = currentUser.name;
   const myTasks = faults.filter(f =>
     (f.assigned === myName || f.tech === myName) &&
     (f.status === 'Pending' || f.status === 'In Progress')
-  ).sort((a,b) => {
-    const po={Urgent:0,Standard:1,PPM:2};
-    return (po[a.priority]||1)-(po[b.priority]||1);
+  ).sort((a, b) => {
+    const po = { Urgent:0, Standard:1, PPM:2 };
+    return (po[a.priority] || 1) - (po[b.priority] || 1);
   });
+
   document.getElementById('pending-count').textContent = myTasks.length;
   const list = document.getElementById('pending-tasks-list');
+
   if (!myTasks.length) {
     list.innerHTML = `<div style="padding:6px 20px;font-size:11px;color:rgba(255,255,255,.35);font-style:italic">No pending tasks 🎉</div>`;
     return;
   }
-  list.innerHTML = myTasks.slice(0,8).map(f => `
-    <div class="pending-task-item${f.priority==='Urgent'?' pt-urgent':''}" onclick="openModal('${f.id}')">
-      <div class="pt-dt">${f.dt||f.location||'Task'}</div>
-      <div class="pt-meta">${f.status} · ${f.priority||''}${f.date?' · '+f.date.slice(5):''}</div>
+
+  // Safe: use esc() on all user-supplied data
+  list.innerHTML = myTasks.slice(0, 8).map(f => `
+    <div class="pending-task-item${f.priority === 'Urgent' ? ' pt-urgent' : ''}" onclick="openModal('${esc(f.id)}')">
+      <div class="pt-dt">${esc(f.dt || f.location || 'Task')}</div>
+      <div class="pt-meta">${esc(f.status)} · ${esc(f.priority || '')}${f.date ? ' · ' + esc(f.date.slice(5)) : ''}</div>
     </div>
-  `).join('') + (myTasks.length>8?`<div style="padding:4px 20px;font-size:10px;color:rgba(255,255,255,.35)">+${myTasks.length-8} more — see dashboard</div>`:'');
+  `).join('') + (myTasks.length > 8
+    ? `<div style="padding:4px 20px;font-size:10px;color:rgba(255,255,255,.35)">+${myTasks.length - 8} more — see dashboard</div>`
+    : '');
 }
 
-
+// ── TELEGRAM NOTIFICATION ─────────────────────────────────
 const TG_TOKEN = '8591486434:AAE4kcVOdFojfm4es0llfCYhz9kH__HT3HM';
 const TG_CHAT  = '7955128312';
 
@@ -991,199 +1192,325 @@ ${fault.notes ? `📝 *Notes:* ${fault.notes}` : ''}`;
     await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: TG_CHAT,
-        text: message,
-        parse_mode: 'Markdown'
-      })
+      body: JSON.stringify({ chat_id: TG_CHAT, text: message, parse_mode: 'Markdown' })
     });
   } catch(e) {
     console.warn('Telegram notification failed:', e);
   }
 }
 
-// ── LOG FAULT ────────────────────────────────────────────
+// ── LOG FAULT ─────────────────────────────────────────────
 async function logFault() {
-  const d=document.getElementById('r-date').value,tech=document.getElementById('r-tech').value,
-    feeder=document.getElementById('r-feeder').value,ftype=document.getElementById('r-ftype').value,
-    dt=document.getElementById('r-dt').value.trim(),loc=document.getElementById('r-loc').value.trim(),
-    priority=document.getElementById('r-priority').value;
-  const errEl=document.getElementById('log-err');
-  if(!d||!tech||!feeder||!ftype||!dt||!loc||!priority){errEl.style.display='block';setTimeout(()=>errEl.style.display='none',3000);return;}
-  const assigned = document.getElementById('r-assigned').value ||
-    (currentUser && currentUser.role === 'technician' ? tech : '');
-  const fault={
-    id:uid(),date:d,time:document.getElementById('r-time').value,tech,feeder,ftype,dt,
-    location:loc,phone:document.getElementById('r-phone').value.trim(),cname:document.getElementById('r-cname').value.trim(),
-    priority,assigned,status:document.getElementById('r-status').value,
-    notes:document.getElementById('r-notes').value.trim(),resNotes:'',followup:'',closedAt:null,
-    loggedAt:new Date().toISOString()
-  };
-  faults.push(fault);
-  await saveFaultsLocal();
-  sendTelegramNotification(fault);
-  renderStats(); renderTable(); populateDateFilter();
-  clearForm();
-  const ok=document.getElementById('log-ok');ok.style.display='block';setTimeout(()=>ok.style.display='none',3500);
+  const d        = document.getElementById('r-date').value;
+  const time     = document.getElementById('r-time').value;
+  const tech     = document.getElementById('r-tech').value;
+  const feeder   = document.getElementById('r-feeder').value;
+  const ftype    = document.getElementById('r-ftype').value;
+  const dt       = document.getElementById('r-dt').value.trim();
+  const loc      = document.getElementById('r-loc').value.trim();
+  const priority = document.getElementById('r-priority').value;
+  const errEl    = document.getElementById('log-err');
+
+  // Validate required fields
+  if (!d || !time || !tech || !feeder || !ftype || !dt || !loc || !priority) {
+    errEl.textContent = !time ? '⏰ Time Reported is required.' : 'Please fill in all fields marked with *';
+    errEl.style.display = 'block';
+    setTimeout(() => errEl.style.display = 'none', 3500);
+    return;
+  }
+
+  // Disable submit button during save to prevent double submission
+  const submitBtn = document.getElementById('submit-btn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Submitting…';
+
+  try {
+    const assigned = document.getElementById('r-assigned').value ||
+      (currentUser && currentUser.role === 'technician' ? tech : '');
+    const fault = {
+      id: uid(), date: d, time, tech, feeder, ftype, dt,
+      location: loc,
+      phone:    document.getElementById('r-phone').value.trim(),
+      cname:    document.getElementById('r-cname').value.trim(),
+      priority, assigned,
+      status:   document.getElementById('r-status').value,
+      notes:    document.getElementById('r-notes').value.trim(),
+      resNotes: '', followup: '', closedAt: null,
+      loggedAt: new Date().toISOString()
+    };
+
+    faults.push(fault);
+    await saveFaultsLocal();
+    sendTelegramNotification(fault);
+    renderStats(); renderTable(); populateDateFilter();
+    clearForm();
+    const ok = document.getElementById('log-ok');
+    ok.style.display = 'block';
+    setTimeout(() => ok.style.display = 'none', 3500);
+  } finally {
+    // Always re-enable submit button after save attempt
+    submitBtn.disabled = false;
+    submitBtn.textContent = '+ Submit Fault';
+  }
 }
 
 function clearForm() {
-  ['r-feeder','r-ftype','r-priority','r-assigned'].forEach(id=>document.getElementById(id).value='');
-  ['r-dt','r-loc','r-phone','r-cname','r-notes','r-time'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('r-date').value=new Date().toISOString().split('T')[0];
-  document.getElementById('r-status').value='Pending';
-  // Re-lock reporter for managers / re-select for technicians
+  ['r-feeder','r-ftype','r-priority','r-assigned'].forEach(id => document.getElementById(id).value = '');
+  ['r-dt','r-loc','r-phone','r-cname','r-notes','r-time'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('r-date').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('r-status').value = 'Pending';
+  // Collapse the More Details section
+  const body   = document.getElementById('more-details-body');
+  const toggle = document.getElementById('more-details-toggle');
+  body.classList.remove('open');
+  toggle.textContent = '▶ More Details — Customer & Notes (optional)';
+  // Re-lock reporter for technicians / managers
   if (currentUser && (currentUser.role === 'technician' || currentUser.role === 'manager')) {
     const techSel = document.getElementById('r-tech');
     for (let i = 0; i < techSel.options.length; i++) {
       if (techSel.options[i].text === currentUser.name) { techSel.selectedIndex = i; break; }
     }
-    if (currentUser.role === 'manager' || currentUser.role === 'technician') techSel.disabled = true;
+    techSel.disabled = true;
   } else {
     document.getElementById('r-tech').value = '';
   }
 }
 
-// ── UPDATE / DELETE ──────────────────────────────────────
+// ── UPDATE MODAL ──────────────────────────────────────────
 function openModal(id) {
-  editingId=id;
-  const f=faults.find(x=>x.id===id);if(!f)return;
-  document.getElementById('m-status').value=f.status;
-  document.getElementById('m-notes').value=f.resNotes||'';
-  document.getElementById('m-followup').value=f.followup||'No — fault fully cleared';
-  document.getElementById('m-tech').value='';
-  document.getElementById('modal-sub').textContent=`${f.ftype||''} — ${f.dt||''} (${f.location||''})`;
-  document.getElementById('modal').style.display='flex';
+  editingId = id;
+  const f = faults.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('m-status').value  = f.status;
+  document.getElementById('m-notes').value   = f.resNotes || '';
+  document.getElementById('m-followup').value = f.followup || 'No — fault fully cleared';
+  document.getElementById('m-tech').value    = '';
+  // Use textContent (not innerHTML) for user data in the modal subtitle
+  document.getElementById('modal-sub').textContent = `${f.ftype || ''} — ${f.dt || ''} (${f.location || ''})`;
+  document.getElementById('modal').style.display = 'flex';
 }
-function closeModal(){document.getElementById('modal').style.display='none';}
-function modalClickOut(e){if(e.target.id==='modal')closeModal();}
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function modalClickOut(e) { if (e.target.id === 'modal') closeModal(); }
 
 async function updateFault() {
-  const f=faults.find(x=>x.id===editingId);if(!f)return;
-  f.status=document.getElementById('m-status').value;
-  f.resNotes=document.getElementById('m-notes').value;
-  f.followup=document.getElementById('m-followup').value;
-  const t=document.getElementById('m-tech').value;if(t)f.assigned=t;
-  if(f.status==='Completed')f.closedAt=new Date().toISOString();
+  const f = faults.find(x => x.id === editingId);
+  if (!f) return;
+  f.status   = document.getElementById('m-status').value;
+  f.resNotes = document.getElementById('m-notes').value;
+  f.followup = document.getElementById('m-followup').value;
+  const t = document.getElementById('m-tech').value;
+  if (t) f.assigned = t;
+  if (f.status === 'Completed') f.closedAt = new Date().toISOString();
   await saveFaultsLocal();
   renderStats(); renderTable();
+  renderPendingTasksSidebar();
   closeModal();
 }
 
-async function quickClose(id) {
-  const f=faults.find(x=>x.id===id);if(!f||!confirm('Mark as Completed?'))return;
-  f.status='Completed';f.closedAt=new Date().toISOString();
-  await saveFaultsLocal();
-  renderStats(); renderTable();
+// ── INLINE CONFIRM: QUICK CLOSE ───────────────────────────
+// Step 1 — show inline confirm buttons in the action cell
+function requestQuickClose(id) {
+  const cell = document.getElementById('actions-' + id);
+  if (!cell) return;
+  // Replace action buttons with inline confirm UI (no browser dialog)
+  cell.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'inline-confirm';
+
+  const lbl = document.createElement('span');
+  lbl.textContent = 'Mark done?';
+
+  const yes = document.createElement('button');
+  yes.className = 'btn btn-success btn-sm';
+  yes.textContent = '✓ Yes';
+  yes.onclick = () => confirmQuickClose(id);
+
+  const no = document.createElement('button');
+  no.className = 'btn btn-ghost btn-sm';
+  no.textContent = 'Cancel';
+  no.onclick = renderTable; // restore original buttons
+
+  wrap.appendChild(lbl); wrap.appendChild(yes); wrap.appendChild(no);
+  cell.appendChild(wrap);
 }
 
-async function deleteFault(id) {
-  if(!isAdmin||!confirm('Permanently delete this fault record?'))return;
-  faults=faults.filter(x=>x.id!==id);
+// Step 2 — actually mark as completed
+async function confirmQuickClose(id) {
+  const f = faults.find(x => x.id === id);
+  if (!f) return;
+  f.status   = 'Completed';
+  f.closedAt = new Date().toISOString();
+  await saveFaultsLocal();
+  renderStats(); renderTable(); renderPendingTasksSidebar();
+}
+
+// ── INLINE CONFIRM: DELETE ────────────────────────────────
+// Step 1 — show inline confirm buttons in the action cell
+function requestDelete(id) {
+  // Works for both the main table (actions-{id}) and the admin table (admin-actions-{id})
+  const cell = document.getElementById('actions-' + id) || document.getElementById('admin-actions-' + id);
+  if (!cell) return;
+  cell.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'inline-confirm';
+
+  const lbl = document.createElement('span');
+  lbl.textContent = 'Delete record?';
+  lbl.style.color = 'var(--red)';
+
+  const yes = document.createElement('button');
+  yes.className = 'btn btn-danger btn-sm';
+  yes.textContent = 'Delete';
+  yes.onclick = () => confirmDelete(id);
+
+  const no = document.createElement('button');
+  no.className = 'btn btn-ghost btn-sm';
+  no.textContent = 'Cancel';
+  no.onclick = () => { renderTable(); if (document.getElementById('page-admin').style.display !== 'none') renderAdminTable(); };
+
+  wrap.appendChild(lbl); wrap.appendChild(yes); wrap.appendChild(no);
+  cell.appendChild(wrap);
+}
+
+// Step 2 — actually delete the record
+async function confirmDelete(id) {
+  if (!isAdmin) return;
+  faults = faults.filter(x => x.id !== id);
   await saveFaultsLocal();
   renderStats(); renderTable(); renderAdminTable();
 }
 
-// ── ADMIN ────────────────────────────────────────────────
+// ── ADMIN TABLE ───────────────────────────────────────────
+// All user data escaped with esc() before injection into innerHTML.
 function renderAdminTable() {
-  const sc={Pending:'bdg-pending','In Progress':'bdg-progress',Completed:'bdg-completed'};
-  const tbody=document.getElementById('admin-tbody');if(!tbody)return;
-  document.getElementById('admin-total').textContent=faults.length;
-  tbody.innerHTML=faults.slice().reverse().map((f,i)=>`
+  const sc    = { Pending:'bdg-pending', 'In Progress':'bdg-progress', Completed:'bdg-completed' };
+  const tbody = document.getElementById('admin-tbody');
+  if (!tbody) return;
+  document.getElementById('admin-total').textContent = faults.length;
+  tbody.innerHTML = faults.slice().reverse().map((f, i) => `
     <tr>
-      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${i+1}</td>
-      <td style="font-family:var(--mono);font-size:11px">${f.date||'—'}</td>
-      <td><div style="font-weight:600;font-size:13px">${f.dt||'—'}</div><div style="font-size:11px;color:var(--text3)">${f.location||''}</div></td>
-      <td style="font-size:12px">${f.ftype||'—'}</td>
-      <td><span class="bdg ${sc[f.status]||'bdg-pending'}">${f.status||'Pending'}</span></td>
-      <td style="font-size:12px">${f.assigned||f.tech||'—'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteFault('${f.id}')">🗑 Delete</button></td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${i + 1}</td>
+      <td style="font-family:var(--mono);font-size:11px">${esc(f.date) || '—'}</td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${esc(f.dt) || '—'}</div>
+        <div style="font-size:11px;color:var(--text3)">${esc(f.location) || ''}</div>
+      </td>
+      <td style="font-size:12px">${esc(f.ftype) || '—'}</td>
+      <td><span class="bdg ${sc[f.status] || 'bdg-pending'}">${esc(f.status) || 'Pending'}</span></td>
+      <td style="font-size:12px">${esc(f.assigned || f.tech) || '—'}</td>
+      <td id="admin-actions-${esc(f.id)}">
+        <button class="btn btn-danger btn-sm" onclick="requestDelete('${esc(f.id)}')">🗑 Delete</button>
+      </td>
     </tr>
   `).join('');
 }
 
+// ── ADMIN: CHANGE PASSWORD ────────────────────────────────
 function changePassword() {
-  const np=document.getElementById('new-pass').value.trim();
-  if(!np||np.length<6){alert('Password must be at least 6 characters.');return;}
-  localStorage.setItem('ie_admin_pass',np);
-  document.getElementById('new-pass').value='';
-  alert('Admin password updated successfully.');
+  const np = document.getElementById('new-pass').value.trim();
+  if (!np || np.length < 6) {
+    showToast('Password must be at least 6 characters.', 'error');
+    return;
+  }
+  // Persist the new password in the shared password store keyed by username
+  const saved = getSavedPasswords();
+  saved[currentUser.username] = np;
+  setSavedPasswords(saved);
+  document.getElementById('new-pass').value = '';
+  showToast('Password updated successfully.', 'success');
 }
 
+// ── ADMIN: EXPORT CSV ─────────────────────────────────────
 function exportCSV() {
-  const headers=['S/N','Date','Time','Feeder','DT Name','Fault Type','Location','Priority','Status','Technician','Contact','Customer','Notes','Resolution','Follow-up','Logged At'];
-  const rows=faults.map((f,i)=>[i+1,f.date,f.time,f.feeder,f.dt,f.ftype,f.location,f.priority,f.status,f.assigned||f.tech,f.phone,f.cname,f.notes,f.resNotes,f.followup,f.loggedAt]);
-  const csv=[headers,...rows].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=`IE_OAU_Faults_${new Date().toISOString().split('T')[0]}.csv`;
+  const headers = ['S/N','Date','Time','Feeder','DT Name','Fault Type','Location','Priority','Status','Technician','Contact','Customer','Notes','Resolution','Follow-up','Logged At'];
+  const rows = faults.map((f, i) => [
+    i + 1, f.date, f.time, f.feeder, f.dt, f.ftype, f.location,
+    f.priority, f.status, f.assigned || f.tech, f.phone, f.cname,
+    f.notes, f.resNotes, f.followup, f.loggedAt
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `IE_OAU_Faults_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
 }
 
-// ── DAILY REPORT ─────────────────────────────────────────
+// ── DAILY REPORT ──────────────────────────────────────────
+// Defaults to today's date; auto-generates when page is shown (see showPage).
 function generateReport() {
-  const date=document.getElementById('rep-date').value;
-  const status=document.getElementById('rep-status').value;
-  const feeder=document.getElementById('rep-feeder').value;
-  let filtered=faults.filter(f=>(!date||f.date===date)&&(!status||f.status===status)&&(!feeder||f.feeder===feeder));
-  if(!filtered.length){document.getElementById('report-out').textContent='No faults found for the selected filters.';return;}
-  const fmt=d=>{try{return new Date(d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}catch(e){return d;}};
-  const urgent=filtered.filter(f=>f.priority==='Urgent');
-  const others=filtered.filter(f=>f.priority!=='Urgent');
-  let sn=1,txt='';
-  txt+=`IKEJA ELECTRIC PLC\n`;
-  txt+=`ORILE AGEGE UNDERTAKING — AKOWONJO BUSINESS UNIT\n`;
-  txt+=`${'═'.repeat(54)}\n`;
-  txt+=`DAILY TECHNICAL WORK ORDER REPORT\n`;
-  txt+=`Date     : ${date?fmt(date):'All Dates'}\n`;
-  txt+=`Generated: ${new Date().toLocaleString('en-GB')}\n`;
-  txt+=`${'─'.repeat(54)}\n`;
-  txt+=`Total: ${filtered.length}  |  Urgent: ${urgent.length}  |  Pending: ${filtered.filter(f=>f.status==='Pending').length}  |  Completed: ${filtered.filter(f=>f.status==='Completed').length}\n`;
-  txt+=`${'═'.repeat(54)}\n\n`;
-  if(urgent.length){
-    txt+=`⚠  URGENT — ATTEND IMMEDIATELY\n${'─'.repeat(54)}\n\n`;
-    urgent.forEach(f=>{
-      txt+=`${sn++}. ${f.ftype?.toUpperCase()} — ${f.dt}\n`;
-      txt+=`   Location  : ${f.location}\n`;
-      txt+=`   Feeder    : ${f.feeder}\n`;
-      txt+=`   Technician: ${f.assigned||f.tech}\n`;
-      if(f.phone) txt+=`   Contact   : ${f.phone}${f.cname?' ('+f.cname+')':''}\n`;
-      txt+=`   Status    : ${f.status}\n`;
-      if(f.notes) txt+=`   Notes     : ${f.notes}\n`;
-      if(f.resNotes) txt+=`   Resolution: ${f.resNotes}\n`;
-      txt+='\n';
+  const date   = document.getElementById('rep-date').value;
+  const status = document.getElementById('rep-status').value;
+  const feeder = document.getElementById('rep-feeder').value;
+  let filtered = faults.filter(f =>
+    (!date   || f.date   === date)   &&
+    (!status || f.status === status) &&
+    (!feeder || f.feeder === feeder)
+  );
+  if (!filtered.length) {
+    document.getElementById('report-out').textContent = 'No faults found for the selected filters.';
+    return;
+  }
+  const fmt = d => {
+    try { return new Date(d).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' }); }
+    catch(e) { return d; }
+  };
+  const urgent = filtered.filter(f => f.priority === 'Urgent');
+  const others = filtered.filter(f => f.priority !== 'Urgent');
+  let sn = 1, txt = '';
+  txt += `IKEJA ELECTRIC PLC\n`;
+  txt += `ORILE AGEGE UNDERTAKING — AKOWONJO BUSINESS UNIT\n`;
+  txt += `${'═'.repeat(54)}\n`;
+  txt += `DAILY TECHNICAL WORK ORDER REPORT\n`;
+  txt += `Date     : ${date ? fmt(date) : 'All Dates'}\n`;
+  txt += `Generated: ${new Date().toLocaleString('en-GB')}\n`;
+  txt += `${'─'.repeat(54)}\n`;
+  txt += `Total: ${filtered.length}  |  Urgent: ${urgent.length}  |  Pending: ${filtered.filter(f => f.status === 'Pending').length}  |  Completed: ${filtered.filter(f => f.status === 'Completed').length}\n`;
+  txt += `${'═'.repeat(54)}\n\n`;
+  if (urgent.length) {
+    txt += `⚠  URGENT — ATTEND IMMEDIATELY\n${'─'.repeat(54)}\n\n`;
+    urgent.forEach(f => {
+      txt += `${sn++}. ${f.ftype?.toUpperCase()} — ${f.dt}\n`;
+      txt += `   Location  : ${f.location}\n`;
+      txt += `   Feeder    : ${f.feeder}\n`;
+      txt += `   Technician: ${f.assigned || f.tech}\n`;
+      if (f.phone) txt += `   Contact   : ${f.phone}${f.cname ? ' (' + f.cname + ')' : ''}\n`;
+      txt += `   Status    : ${f.status}\n`;
+      if (f.notes)    txt += `   Notes     : ${f.notes}\n`;
+      if (f.resNotes) txt += `   Resolution: ${f.resNotes}\n`;
+      txt += '\n';
     });
   }
-  if(others.length){
-    txt+=`STANDARD JOBS\n${'─'.repeat(54)}\n\n`;
-    others.forEach(f=>{
-      txt+=`${sn++}. ${f.ftype}${f.priority==='PPM'?' [PPM]':''} — ${f.dt}\n`;
-      txt+=`   Location  : ${f.location}\n`;
-      txt+=`   Feeder    : ${f.feeder}\n`;
-      txt+=`   Technician: ${f.assigned||f.tech}\n`;
-      if(f.phone) txt+=`   Contact   : ${f.phone}${f.cname?' ('+f.cname+')':''}\n`;
-      else if(f.priority==='PPM') txt+=`   Contact   : PPM — no customer contact\n`;
-      txt+=`   Status    : ${f.status}\n`;
-      if(f.notes) txt+=`   Notes     : ${f.notes}\n`;
-      if(f.resNotes) txt+=`   Resolution: ${f.resNotes}\n`;
-      if(f.followup&&f.followup!=='No — fault fully cleared') txt+=`   Follow-up : ${f.followup}\n`;
-      txt+='\n';
+  if (others.length) {
+    txt += `STANDARD JOBS\n${'─'.repeat(54)}\n\n`;
+    others.forEach(f => {
+      txt += `${sn++}. ${f.ftype}${f.priority === 'PPM' ? ' [PPM]' : ''} — ${f.dt}\n`;
+      txt += `   Location  : ${f.location}\n`;
+      txt += `   Feeder    : ${f.feeder}\n`;
+      txt += `   Technician: ${f.assigned || f.tech}\n`;
+      if (f.phone) txt += `   Contact   : ${f.phone}${f.cname ? ' (' + f.cname + ')' : ''}\n`;
+      else if (f.priority === 'PPM') txt += `   Contact   : PPM — no customer contact\n`;
+      txt += `   Status    : ${f.status}\n`;
+      if (f.notes)    txt += `   Notes     : ${f.notes}\n`;
+      if (f.resNotes) txt += `   Resolution: ${f.resNotes}\n`;
+      if (f.followup && f.followup !== 'No — fault fully cleared') txt += `   Follow-up : ${f.followup}\n`;
+      txt += '\n';
     });
   }
-  txt+=`${'═'.repeat(54)}\n`;
-  txt+=`Orile Agege Undertaking | Akowonjo Business Unit\n`;
-  txt+=`Ikeja Electric PLC — Distribution Operations`;
-  document.getElementById('report-out').textContent=txt;
+  txt += `${'═'.repeat(54)}\n`;
+  txt += `Orile Agege Undertaking | Akowonjo Business Unit\n`;
+  txt += `Ikeja Electric PLC — Distribution Operations`;
+  // textContent prevents any injected HTML from rendering
+  document.getElementById('report-out').textContent = txt;
 }
 
 function copyReport() {
-  const txt=document.getElementById('report-out').textContent;
+  const txt = document.getElementById('report-out').textContent;
   navigator.clipboard.writeText(txt)
-    .then(()=>alert('Report copied! Paste directly into WhatsApp.'))
-    .catch(()=>alert('Select the text manually and copy.'));
+    .then(() => showToast('✓ Copied! Paste directly into WhatsApp.', 'success'))
+    .catch(() => showToast('Select the text manually and copy.', 'error'));
 }
 
-// ── ANALYTICS ────────────────────────────────────────────
+// ── ANALYTICS ─────────────────────────────────────────────
 let _charts = {};
 
 function destroyChart(id) {
@@ -1193,17 +1520,17 @@ function destroyChart(id) {
 function renderAnalytics() {
   if (!faults.length) return;
 
-  // ── KPIs ──
-  const total = faults.length;
-  const urgentCount = faults.filter(f=>f.priority==='Urgent').length;
-  const completionRate = total ? Math.round(faults.filter(f=>f.status==='Completed').length/total*100) : 0;
+  // ── KPIs (safe: only computed numbers) ──
+  const total          = faults.length;
+  const urgentCount    = faults.filter(f => f.priority === 'Urgent').length;
+  const completionRate = total ? Math.round(faults.filter(f => f.status === 'Completed').length / total * 100) : 0;
   const avgPerDay = (() => {
-    const dates = [...new Set(faults.map(f=>f.date).filter(Boolean))];
-    return dates.length ? (total/dates.length).toFixed(1) : '0';
+    const dates = [...new Set(faults.map(f => f.date).filter(Boolean))];
+    return dates.length ? (total / dates.length).toFixed(1) : '0';
   })();
   document.getElementById('analytics-kpis').innerHTML = `
     <div class="stat"><div class="stat-icon si-blue">📊</div><div class="stat-info"><div class="label">Total Logged</div><div class="val sv-blue">${total}</div><div class="sub">All time</div></div></div>
-    <div class="stat"><div class="stat-icon si-red">🚨</div><div class="stat-info"><div class="label">Urgent Jobs</div><div class="val sv-red">${urgentCount}</div><div class="sub">${total?Math.round(urgentCount/total*100):0}% of total</div></div></div>
+    <div class="stat"><div class="stat-icon si-red">🚨</div><div class="stat-info"><div class="label">Urgent Jobs</div><div class="val sv-red">${urgentCount}</div><div class="sub">${total ? Math.round(urgentCount / total * 100) : 0}% of total</div></div></div>
     <div class="stat"><div class="stat-icon si-green">✅</div><div class="stat-info"><div class="label">Completion Rate</div><div class="val sv-green">${completionRate}%</div><div class="sub">Faults resolved</div></div></div>
     <div class="stat"><div class="stat-icon si-yellow">📅</div><div class="stat-info"><div class="label">Avg / Day</div><div class="val sv-yellow">${avgPerDay}</div><div class="sub">Faults per active day</div></div></div>
   `;
@@ -1215,26 +1542,25 @@ function renderAnalytics() {
   const feederData = {};
   faults.forEach(f => {
     if (feederStatusFilter && f.status !== feederStatusFilter) return;
-    const key = (f.feeder||'Unknown').split('—')[0].trim();
-    feederData[key] = (feederData[key]||0) + 1;
+    const key = (f.feeder || 'Unknown').split('—')[0].trim();
+    feederData[key] = (feederData[key] || 0) + 1;
   });
-  const feederEntries = Object.entries(feederData).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const feederEntries = Object.entries(feederData).sort((a, b) => b[1] - a[1]).slice(0, 12);
   destroyChart('feeder');
   _charts['feeder'] = new Chart(document.getElementById('chart-feeder'), {
     type: 'bar',
     data: {
-      labels: feederEntries.map(e=>e[0]),
+      labels: feederEntries.map(e => e[0]),
       datasets: [{
         label: 'Faults',
-        data: feederEntries.map(e=>e[1]),
-        backgroundColor: feederEntries.map((_,i)=>PALETTE[i%PALETTE.length]+'cc'),
-        borderColor: feederEntries.map((_,i)=>PALETTE[i%PALETTE.length]),
+        data: feederEntries.map(e => e[1]),
+        backgroundColor: feederEntries.map((_, i) => PALETTE[i % PALETTE.length] + 'cc'),
+        borderColor:     feederEntries.map((_, i) => PALETTE[i % PALETTE.length]),
         borderWidth: 1, borderRadius: 5
       }]
     },
     options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
         x: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#e2e8f0' } },
@@ -1243,18 +1569,18 @@ function renderAnalytics() {
     }
   });
 
-  // ── CHART 2: Fault Types ──
+  // ── CHART 2: Fault Types Breakdown ──
   const typeData = {};
-  faults.forEach(f => { const k=f.ftype||'Unknown'; typeData[k]=(typeData[k]||0)+1; });
-  const typeEntries = Object.entries(typeData).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  faults.forEach(f => { const k = f.ftype || 'Unknown'; typeData[k] = (typeData[k] || 0) + 1; });
+  const typeEntries = Object.entries(typeData).sort((a, b) => b[1] - a[1]).slice(0, 10);
   destroyChart('types');
   _charts['types'] = new Chart(document.getElementById('chart-types'), {
     type: 'doughnut',
     data: {
-      labels: typeEntries.map(e=>e[0]),
+      labels: typeEntries.map(e => e[0]),
       datasets: [{
-        data: typeEntries.map(e=>e[1]),
-        backgroundColor: PALETTE.slice(0,typeEntries.length).map(c=>c+'cc'),
+        data: typeEntries.map(e => e[1]),
+        backgroundColor: PALETTE.slice(0, typeEntries.length).map(c => c + 'cc'),
         borderColor: '#fff', borderWidth: 2, hoverOffset: 6
       }]
     },
@@ -1262,49 +1588,44 @@ function renderAnalytics() {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 12, padding: 10 } },
-        tooltip: { callbacks: { label: ctx=>`${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed/faults.length*100)}%)` } }
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed / faults.length * 100)}%)` } }
       },
       cutout: '58%'
     }
   });
 
   // ── CHART 3: Fault Trend (daily) ──
-  const trendDays = parseInt(document.getElementById('an-trend-days').value)||0;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const dayMap = {};
+  const trendDays = parseInt(document.getElementById('an-trend-days').value) || 0;
+  const today     = new Date(); today.setHours(0, 0, 0, 0);
+  const dayMap = {}, pendingMap = {}, completedMap = {};
   faults.forEach(f => {
     if (!f.date) return;
     if (trendDays > 0) {
-      const d = new Date(f.date); d.setHours(0,0,0,0);
+      const d = new Date(f.date); d.setHours(0, 0, 0, 0);
       if ((today - d) / 86400000 > trendDays) return;
     }
-    dayMap[f.date] = (dayMap[f.date]||0) + 1;
+    dayMap[f.date] = (dayMap[f.date] || 0) + 1;
+    if (f.status === 'Pending' || f.status === 'In Progress') pendingMap[f.date]   = (pendingMap[f.date]   || 0) + 1;
+    if (f.status === 'Completed')                             completedMap[f.date] = (completedMap[f.date] || 0) + 1;
   });
   const trendKeys = Object.keys(dayMap).sort();
-  const pendingMap={}, completedMap={};
-  faults.forEach(f=>{
-    if(!f.date)return;
-    if(trendDays>0){const d=new Date(f.date);d.setHours(0,0,0,0);if((today-d)/86400000>trendDays)return;}
-    if(f.status==='Pending'||f.status==='In Progress') pendingMap[f.date]=(pendingMap[f.date]||0)+1;
-    if(f.status==='Completed') completedMap[f.date]=(completedMap[f.date]||0)+1;
-  });
   destroyChart('trend');
   _charts['trend'] = new Chart(document.getElementById('chart-trend'), {
     type: 'line',
     data: {
-      labels: trendKeys.map(d=>{ const [y,m,dd]=d.split('-'); return `${dd}/${m}`; }),
+      labels: trendKeys.map(d => { const [, m, dd] = d.split('-'); return `${dd}/${m}`; }),
       datasets: [
         {
           label: 'Total Faults',
-          data: trendKeys.map(k=>dayMap[k]||0),
+          data: trendKeys.map(k => dayMap[k] || 0),
           borderColor: '#1a56db', backgroundColor: '#1a56db18',
           fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#1a56db', borderWidth: 2
         },
         {
           label: 'Completed',
-          data: trendKeys.map(k=>completedMap[k]||0),
+          data: trendKeys.map(k => completedMap[k] || 0),
           borderColor: '#057a55', backgroundColor: 'transparent',
-          fill: false, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#057a55', borderWidth: 2, borderDash: [4,3]
+          fill: false, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#057a55', borderWidth: 2, borderDash: [4, 3]
         }
       ]
     },
@@ -1323,26 +1644,27 @@ function renderAnalytics() {
   const techData = {};
   faults.forEach(f => {
     if (techStatusFilter && f.status !== techStatusFilter) return;
-    const k = f.assigned||f.tech||'Unassigned';
-    techData[k] = (techData[k]||0) + 1;
+    const k = f.assigned || f.tech || 'Unassigned';
+    techData[k] = (techData[k] || 0) + 1;
   });
-  const techEntries = Object.entries(techData).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const techEntries = Object.entries(techData).sort((a, b) => b[1] - a[1]).slice(0, 10);
   destroyChart('tech');
   _charts['tech'] = new Chart(document.getElementById('chart-tech'), {
     type: 'bar',
     data: {
-      labels: techEntries.map(e=>e[0].split(' ')[0]),
+      labels: techEntries.map(e => e[0].split(' ')[0]),
       datasets: [{
         label: 'Jobs',
-        data: techEntries.map(e=>e[1]),
-        backgroundColor: techEntries.map((_,i)=>PALETTE[i%PALETTE.length]+'cc'),
-        borderColor: techEntries.map((_,i)=>PALETTE[i%PALETTE.length]),
+        data: techEntries.map(e => e[1]),
+        backgroundColor: techEntries.map((_, i) => PALETTE[i % PALETTE.length] + 'cc'),
+        borderColor:     techEntries.map((_, i) => PALETTE[i % PALETTE.length]),
         borderWidth: 1, borderRadius: 5
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false },
+      plugins: {
+        legend: { display: false },
         tooltip: { callbacks: { title: ctx => techEntries[ctx[0].dataIndex][0] } }
       },
       scales: {
@@ -1353,34 +1675,39 @@ function renderAnalytics() {
   });
 
   // ── TOP 5 Feeders Table ──
+  // Uses esc() on feeder names (user data) before innerHTML injection.
   const feederFull = {};
   faults.forEach(f => {
-    const k = f.feeder||'Unknown';
-    if (!feederFull[k]) feederFull[k]={total:0,pending:0,inprogress:0,completed:0,urgent:0};
+    const k = f.feeder || 'Unknown';
+    if (!feederFull[k]) feederFull[k] = { total:0, pending:0, inprogress:0, completed:0, urgent:0 };
     feederFull[k].total++;
-    if(f.status==='Pending') feederFull[k].pending++;
-    if(f.status==='In Progress') feederFull[k].inprogress++;
-    if(f.status==='Completed') feederFull[k].completed++;
-    if(f.priority==='Urgent') feederFull[k].urgent++;
+    if (f.status === 'Pending')     feederFull[k].pending++;
+    if (f.status === 'In Progress') feederFull[k].inprogress++;
+    if (f.status === 'Completed')   feederFull[k].completed++;
+    if (f.priority === 'Urgent')    feederFull[k].urgent++;
   });
-  const top5 = Object.entries(feederFull).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
-  document.getElementById('an-top-feeders').innerHTML = top5.map(([name,d],i)=>`
+  const top5 = Object.entries(feederFull).sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+  document.getElementById('an-top-feeders').innerHTML = top5.map(([name, d], i) => `
     <tr>
       <td style="font-weight:700;color:var(--text2)">${['🥇','🥈','🥉','4','5'][i]}</td>
-      <td style="font-weight:600;font-size:13px">${name}</td>
+      <td style="font-weight:600;font-size:13px">${esc(name)}</td>
       <td style="font-family:var(--mono);font-weight:700;color:var(--blue)">${d.total}</td>
       <td><span class="bdg bdg-pending">${d.pending}</span></td>
       <td><span class="bdg bdg-progress">${d.inprogress}</span></td>
       <td><span class="bdg bdg-completed">${d.completed}</span></td>
-      <td>${d.urgent?`<span class="bdg bdg-urgent">🚨 ${d.urgent}</span>`:'<span style="color:var(--text3);font-size:12px">—</span>'}</td>
+      <td>${d.urgent ? `<span class="bdg bdg-urgent">🚨 ${d.urgent}</span>` : '<span style="color:var(--text3);font-size:12px">—</span>'}</td>
     </tr>
   `).join('');
 }
 
-// ── INIT ─────────────────────────────────────────────────
-// init
-document.getElementById('r-date').value=new Date().toISOString().split('T')[0];
-document.getElementById('rep-date').value=new Date().toISOString().split('T')[0];
+// ── INIT ──────────────────────────────────────────────────
+// Populate all dropdowns from the single TECHNICIANS source of truth.
+populateTechDropdowns();
+// Default both date fields to today.
+const _today = new Date().toISOString().split('T')[0];
+document.getElementById('r-date').value   = _today;
+document.getElementById('rep-date').value = _today;
+
 </script>
 </body>
 </html>
