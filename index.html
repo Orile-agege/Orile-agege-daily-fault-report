@@ -202,37 +202,6 @@ textarea.fi-form{resize:vertical;min-height:80px}
 /* ── REPORT ── */
 .report-out{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;white-space:pre-wrap;font-family:var(--mono);font-size:12px;line-height:1.9;color:var(--text);min-height:120px}
 
-/* ── DAILY REPORT VISUAL ── */
-.rep-header{background:linear-gradient(135deg,var(--sidebar) 0%,#1a56db 100%);border-radius:12px;padding:24px 28px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden}
-.rep-header::after{content:'⚡';position:absolute;right:24px;top:50%;transform:translateY(-50%);font-size:64px;opacity:.08}
-.rep-company{font-size:13px;font-weight:700;letter-spacing:.08em;opacity:.75;text-transform:uppercase}
-.rep-title{font-size:22px;font-weight:800;margin:6px 0 4px;letter-spacing:-.3px}
-.rep-meta{font-size:12px;opacity:.65;font-family:var(--mono)}
-.rep-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.rep-kpi{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center}
-.rep-kpi .rk-val{font-size:28px;font-weight:800;font-family:var(--mono);line-height:1}
-.rep-kpi .rk-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-top:5px;font-weight:600}
-.rep-section{margin-bottom:20px}
-.rep-section-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-.rep-section-urgent .rep-section-hdr{background:var(--red-light);color:var(--red);border:1px solid #fca5a5;border-bottom:none}
-.rep-section-standard .rep-section-hdr{background:var(--blue-light);color:var(--blue);border:1px solid #bfdbfe;border-bottom:none}
-.rep-section-ppm .rep-section-hdr{background:#f1f5f9;color:#475569;border:1px solid var(--border);border-bottom:none}
-.rep-fault-card{border-left-width:4px;border-left-style:solid;background:#fff;padding:14px 18px;border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
-.rep-fault-card:last-child{border-radius:0 0 8px 8px}
-.rep-fault-card.urgent{border-left-color:var(--red)}
-.rep-fault-card.standard{border-left-color:var(--blue)}
-.rep-fault-card.ppm{border-left-color:#94a3b8}
-.rep-fault-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
-.rep-fault-title{font-size:14px;font-weight:700;color:var(--text);line-height:1.3}
-.rep-fault-title span{font-size:11px;color:var(--text3);font-weight:400;margin-left:6px}
-.rep-fault-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 14px;font-size:12px}
-.rep-fault-field .rfk{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:1px}
-.rep-fault-field .rfv{color:var(--text);font-weight:500}
-.rep-fault-notes{margin-top:10px;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:12px;color:var(--text2);border-left:3px solid var(--border2)}
-.rep-empty{text-align:center;padding:56px 24px;background:#fff;border:1px solid var(--border);border-radius:12px}
-.rep-footer{text-align:center;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text3);font-family:var(--mono)}
-@media(max-width:768px){.rep-kpis{grid-template-columns:repeat(2,1fr)}.rep-fault-grid{grid-template-columns:1fr 1fr}}
-
 /* ── LOADING ── */
 .loading{text-align:center;padding:32px;color:var(--text3);font-size:13px}
 .spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
@@ -552,22 +521,10 @@ textarea.fi-form{resize:vertical;min-height:80px}
 
       <!-- ══ PAGE: DAILY REPORT ══════════════════════════════ -->
       <div id="page-daily" style="display:none">
-        <div class="card" style="margin-bottom:20px">
-          <div class="card-header" style="background:linear-gradient(135deg,#f8fafc,#fff)">
-            <div style="display:flex;align-items:center;gap:12px">
-              <div style="width:40px;height:40px;border-radius:10px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📋</div>
-              <div>
-                <div class="card-title" style="font-size:15px">Daily Work Order Report</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px">Orile Agege Undertaking — Akowonjo Business Unit</div>
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-              <button class="btn btn-ghost btn-sm" onclick="copyReport()" title="Copy plain-text version for WhatsApp">📋 Copy Text</button>
-              <button class="btn btn-primary" onclick="generateReport()" style="gap:6px">⚡ Generate</button>
-            </div>
-          </div>
-          <div class="card-body" style="padding:14px 20px">
-            <div class="filters" style="margin-bottom:0">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📋 Daily Work Order Report</div></div>
+          <div class="card-body">
+            <div class="filters" style="margin-bottom:16px">
               <input class="fi" type="date" id="rep-date" style="width:auto">
               <select class="fi" id="rep-status" style="width:auto">
                 <option value="">All Status</option>
@@ -581,19 +538,12 @@ textarea.fi-form{resize:vertical;min-height:80px}
                 <option>AdaranijoINJ — T1 Arigbanla</option><option>AdaranijoINJ — T1 NYSC</option>
                 <option>OgbaTCN — Abeokuta Exp.</option><option>MaplewoodINJ</option><option>Other</option>
               </select>
+              <button class="btn btn-primary" onclick="generateReport()">Generate</button>
+              <button class="btn btn-ghost" onclick="copyReport()">📋 Copy</button>
             </div>
+            <div class="report-out" id="report-out">Select a date and click Generate to create your daily work order report.</div>
           </div>
         </div>
-        <!-- Visual report output -->
-        <div id="report-out">
-          <div class="rep-empty">
-            <div style="font-size:48px;margin-bottom:14px;opacity:.4">📋</div>
-            <div style="font-size:16px;font-weight:700;color:var(--text2);margin-bottom:6px">No Report Generated</div>
-            <div style="font-size:13px;color:var(--text3)">Select a date and click <strong>Generate</strong> to create your daily work order report.</div>
-          </div>
-        </div>
-        <!-- Hidden textarea for copy — keeps plain-text format -->
-        <textarea id="report-text-copy" style="position:absolute;left:-9999px;top:-9999px" aria-hidden="true"></textarea>
       </div>
 
       <!-- ══ PAGE: ADMIN PANEL ═══════════════════════════════ -->
@@ -791,39 +741,29 @@ textarea.fi-form{resize:vertical;min-height:80px}
 // ── GOOGLE SHEETS ENDPOINT ────────────────────────────────
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxKN-Lz2y-kV8qpu2hbHnduxXwmWlveoJkBDAF8A1__6Orp2yG2q_4Yg-HPWCwtJrwt/exec';
 
-// ── PASSWORD HASHING ─────────────────────────────────────
-// Passwords are stored as SHA-256 hashes — never in plain text.
-// To generate a new hash in the browser console, run:
-//   hashPassword('yourpassword').then(h => console.log(h))
-async function hashPassword(plain) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
 // ── USER DATABASE ─────────────────────────────────────────
 // roles: 'admin' | 'manager' | 'technician'
-// Passwords stored as SHA-256 hashes. Plain-text credentials are NOT in this file.
-// To add/remove staff: edit ONLY this list. All dropdowns update automatically.
 const USERS = [
   // ── ADMIN ──
-  { username: 'admin',       password: '35f4cb24af1a38759bb371562f453205e462f1cd51d0cc960e3b9157c41ed887', name: 'Administrator',      role: 'admin'       },
-  // ── TECHNICIANS ──
-  { username: 'sanusi',      password: '15124579e4cd61c3f5958ad411599486351e1bf361c568f63698532f17ab0de3', name: 'Sanusi Adamu',       role: 'technician'  },
-  { username: 'akeem',       password: '69d4cb026d62f74ea5e101da058cf995363e40e7126588c47f89b5c06ac49ab9', name: 'Akeem Alaye',        role: 'technician'  },
-  { username: 'odunayo',     password: '28e24b84403ad893a460f55ba2114d53cf79071fedbabbfbf956d3bae8b0d333', name: 'Odunayo Adebayo',    role: 'technician'  },
-  { username: 'olayinka',    password: 'fcbc2cbe226acc141ae782ba592af2af0780f73f77d57ccc0e0e112cb4c9f95e', name: 'Olayinka Aina',      role: 'technician'  },
-  { username: 'omotosho',    password: '78fa60525b16400c4f5054c5b0475b3485145cf807b5923c2f86c02681d0d36c', name: 'Omotosho Gbenga',    role: 'technician'  },
-  { username: 'sulaimon',    password: '79b7544a544709781dc1be8f1d6843c27cd3aaca25b9eb99d6ed5f216540386d', name: 'Sulaimon Muritala',  role: 'technician'  },
-  { username: 'adewale',     password: '2ae65ba7f1cded466a7f0419803db67040e3cdcaaf047ba6918f31328eced205', name: 'Adewale Ademola',    role: 'technician'  },
-  { username: 'iboro',       password: 'e9a40af73118c175fd749c49dec8f155f4dc014d9a3d2920243c5afc0e0cb383', name: 'Iboro Bassey',       role: 'technician'  },
-  { username: 'owoeye',      password: 'cd48ea590c62ed5f96b93940c7d7d4d051d520d2efcc24578d91f6d3b5636a46', name: 'Owoeye Segun',       role: 'technician'  },
-  { username: 'oluwasegun',  password: '22b3aa7d3bccffde5943ff936bfcfeb59842e61cda74550af2126669f0501534', name: 'Oluwasegun Banjo',   role: 'technician'  },
-  { username: 'hammed',      password: 'ab612c873e2885fdb179e34276be1c24d9b456bc97fdecc574faa09527687760', name: 'Hammed Busayo',      role: 'technician'  },
-  // ── MANAGERS (appear in "Reported By" but NOT in "Assigned To") ──
-  { username: 'omo',         password: 'f21ba26d64b477a4a0c6a6b3912964f83c806c91a6630980ce18e368b73d29db', name: 'OMO',                role: 'manager'     },
-  { username: 'oms',         password: 'ad0bf7d8ec2a721763f044138fb69df097a5388f934fb4a8d758bef314948bcb', name: 'OMS',                role: 'manager'     },
-  { username: 'omc',         password: '803ff1b4f223ce21033b853adb3dd7adfbd2b401394c4299bde0f21b966c52a4', name: 'OMC',                role: 'manager'     },
-  { username: 'utm',         password: '16280d27fc94ee0b59941c537ccb9056731e98a1544a7bbc701e5402e53056dc', name: 'UTM',                role: 'manager'     },
+  { username: 'admin',       password: 'IE@Orile2024',  name: 'Administrator',      role: 'admin'       },
+  // ── TECHNICIANS — these populate every "Assigned To" / "Reported By" / "Reassign" dropdown ──
+  // To add or remove staff: edit ONLY this list. All dropdowns update automatically.
+  { username: 'sanusi',      password: 'orile01',        name: 'Sanusi Adamu',       role: 'technician'  },
+  { username: 'akeem',       password: 'orile02',        name: 'Akeem Alaye',        role: 'technician'  },
+  { username: 'odunayo',     password: 'orile03',        name: 'Odunayo Adebayo',    role: 'technician'  },
+  { username: 'olayinka',    password: 'orile04',        name: 'Olayinka Aina',      role: 'technician'  },
+  { username: 'omotosho',    password: 'orile05',        name: 'Omotosho Gbenga',    role: 'technician'  },
+  { username: 'sulaimon',    password: 'orile06',        name: 'Sulaimon Muritala',  role: 'technician'  },
+  { username: 'adewale',     password: 'orile07',        name: 'Adewale Ademola',    role: 'technician'  },
+  { username: 'iboro',       password: 'orile08',        name: 'Iboro Bassey',       role: 'technician'  },
+  { username: 'owoeye',      password: 'orile09',        name: 'Owoeye Segun',       role: 'technician'  },
+  { username: 'oluwasegun',  password: 'orile10',        name: 'Oluwasegun Banjo',   role: 'technician'  },
+  { username: 'hammed',      password: 'orile11',        name: 'Hammed Busayo',      role: 'technician'  },
+  // ── MANAGERS (oversee operations; appear in "Reported By" but NOT in "Assigned To") ──
+  { username: 'omo',         password: 'omo2024',        name: 'OMO',                role: 'manager'     },
+  { username: 'oms',         password: 'oms2024',        name: 'OMS',                role: 'manager'     },
+  { username: 'omc',         password: 'omc2024',        name: 'OMC',                role: 'manager'     },
+  { username: 'utm',         password: 'utm2024',        name: 'UTM',                role: 'manager'     },
 ];
 
 // ── SINGLE SOURCE OF TRUTH: TECHNICIAN LIST ──────────────
@@ -1040,44 +980,29 @@ function startAutoRefresh() {
 }
 
 // ── AUTH ──────────────────────────────────────────────────
-async function doLogin() {
+function doLogin() {
   const uname = (document.getElementById('login-username').value || '').trim().toLowerCase();
   const pass  = document.getElementById('login-password').value;
-
-  let user = null;
-  try {
-    // Primary: compare SHA-256 hash of entered password
-    const hashedPass = await hashPassword(pass);
-    const saved = getSavedPasswords(); // returns only valid 64-char hex hashes
-    user = USERS.find(u => u.username === uname && (saved[uname] || u.password) === hashedPass);
-  } catch(e) {
-    // Fallback: crypto.subtle unavailable (e.g. some older browsers) — should not happen in practice
-    console.warn('crypto.subtle unavailable, login cannot proceed:', e);
-  }
-
+  const saved = getSavedPasswords();
+  const user  = USERS.find(u => u.username === uname && (saved[uname] || u.password) === pass);
   if (!user) {
     const err = document.getElementById('login-err');
     err.style.display = 'block';
     setTimeout(() => err.style.display = 'none', 3000);
     return;
   }
+  // Freeze an immutable snapshot so `currentUser.role = 'admin'` in the
+  // browser console silently fails (or throws in strict mode) rather than
+  // escalating privileges. Note: reassigning `currentUser` itself is still
+  // possible client-side — this is defence-in-depth for a zero-server app.
   currentUser = Object.freeze({ ...user });
   isAdmin = currentUser.role === 'admin';
-  sessionStorage.setItem('ie_session', JSON.stringify({ username: currentUser.username }));
   startApp(currentUser.name, currentUser.role);
 }
 
-// Store per-username password overrides (SHA-256 hashes only)
+// Store per-username password overrides
 function getSavedPasswords() {
-  try {
-    const raw = JSON.parse(localStorage.getItem('ie_passwords') || '{}');
-    // Safety: discard any entries that are NOT 64-char hex hashes (old plain-text format)
-    const clean = {};
-    Object.entries(raw).forEach(([k, v]) => {
-      if (typeof v === 'string' && /^[0-9a-f]{64}$/.test(v)) clean[k] = v;
-    });
-    return clean;
-  } catch(e) { return {}; }
+  try { return JSON.parse(localStorage.getItem('ie_passwords') || '{}'); } catch(e) { return {}; }
 }
 function setSavedPasswords(obj) {
   try { localStorage.setItem('ie_passwords', JSON.stringify(obj)); } catch(e) {}
@@ -1120,7 +1045,6 @@ function startApp(name, role) {
 }
 
 function logout() {
-  sessionStorage.removeItem('ie_session');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-username').value = '';
@@ -1691,16 +1615,15 @@ function renderAdminTable() {
 }
 
 // ── ADMIN: CHANGE PASSWORD ────────────────────────────────
-async function changePassword() {
+function changePassword() {
   const np = document.getElementById('new-pass').value.trim();
   if (!np || np.length < 6) {
     showToast('Password must be at least 6 characters.', 'error');
     return;
   }
-  // Hash new password before storing — never save plain text
-  const hashed = await hashPassword(np);
+  // Persist the new password in the shared password store keyed by username
   const saved = getSavedPasswords();
-  saved[currentUser.username] = hashed;
+  saved[currentUser.username] = np;
   setSavedPasswords(saved);
   document.getElementById('new-pass').value = '';
   showToast('Password updated successfully.', 'success');
@@ -1752,148 +1675,6 @@ function faultTimeStr(f) {
   } catch(e) {}
   return f.time.slice(0, 5);
 }
-// ── Build plain-text version (for Copy / WhatsApp) ──────
-function buildReportText(filtered, date, status, feeder) {
-  const fmt = d => {
-    try { return new Date(d).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' }); }
-    catch(e) { return d; }
-  };
-  const urgent = filtered.filter(f => f.priority === 'Urgent');
-  const others = filtered.filter(f => f.priority !== 'Urgent');
-  let sn = 1, txt = '';
-  txt += `IKEJA ELECTRIC PLC
-`;
-  txt += `ORILE AGEGE UNDERTAKING — AKOWONJO BUSINESS UNIT
-`;
-  txt += `${'═'.repeat(54)}
-`;
-  txt += `DAILY TECHNICAL WORK ORDER REPORT
-`;
-  txt += `Date     : ${date ? fmt(date) : 'All Dates'}
-`;
-  txt += `Generated: ${new Date().toLocaleString('en-GB')}
-`;
-  txt += `Filter   : ${status || 'All Status'}  |  ${feeder || 'All Feeders'}
-`;
-  txt += `${'─'.repeat(54)}
-`;
-  txt += `Total: ${filtered.length}  |  Urgent: ${urgent.length}  |  Pending: ${filtered.filter(f => f.status === 'Pending').length}  |  Completed: ${filtered.filter(f => f.status === 'Completed').length}
-`;
-  txt += `${'═'.repeat(54)}
-
-`;
-  if (urgent.length) {
-    txt += `⚠  URGENT — ATTEND IMMEDIATELY
-${'─'.repeat(54)}
-
-`;
-    urgent.forEach(f => {
-      txt += `${sn++}. ${(f.ftype||'').toUpperCase()} — ${f.dt}
-`;
-      txt += `   Location  : ${f.location}
-`;
-      txt += `   Feeder    : ${f.feeder}
-`;
-      txt += `   Technician: ${f.assigned || f.tech}
-`;
-      if (f.phone) txt += `   Contact   : ${f.phone}${f.cname ? ' (' + f.cname + ')' : ''}
-`;
-      txt += `   Status    : ${f.status}${f.clearTime ? '  — Cleared ' + f.clearTime : ''}
-`;
-      if (f.lastUpdatedBy) txt += `   Updated By: ${f.lastUpdatedBy}${f.lastUpdatedAt ? '  @ ' + fmtStamp(f.lastUpdatedAt) : ''}
-`;
-      if (f.notes)    txt += `   Notes     : ${f.notes}
-`;
-      if (f.resNotes) txt += `   Resolution: ${f.resNotes}
-`;
-      txt += '
-';
-    });
-  }
-  if (others.length) {
-    const ppm      = others.filter(f => f.priority === 'PPM');
-    const standard = others.filter(f => f.priority !== 'PPM');
-    const writeGroup = (label, list) => {
-      if (!list.length) return;
-      txt += `${label}
-${'─'.repeat(54)}
-
-`;
-      list.forEach(f => {
-        txt += `${sn++}. ${f.ftype}${f.priority === 'PPM' ? ' [PPM]' : ''} — ${f.dt}
-`;
-        txt += `   Location  : ${f.location}
-`;
-        txt += `   Feeder    : ${f.feeder}
-`;
-        txt += `   Technician: ${f.assigned || f.tech}
-`;
-        if (f.phone) txt += `   Contact   : ${f.phone}${f.cname ? ' (' + f.cname + ')' : ''}
-`;
-        else if (f.priority === 'PPM') txt += `   Contact   : PPM — no customer contact
-`;
-        txt += `   Status    : ${f.status}${f.clearTime ? '  — Cleared ' + f.clearTime : ''}
-`;
-        if (f.lastUpdatedBy) txt += `   Updated By: ${f.lastUpdatedBy}${f.lastUpdatedAt ? '  @ ' + fmtStamp(f.lastUpdatedAt) : ''}
-`;
-        if (f.notes)    txt += `   Notes     : ${f.notes}
-`;
-        if (f.resNotes) txt += `   Resolution: ${f.resNotes}
-`;
-        if (f.followup && f.followup !== 'No — fault fully cleared') txt += `   Follow-up : ${f.followup}
-`;
-        txt += '
-';
-      });
-    };
-    writeGroup('STANDARD JOBS', standard);
-    writeGroup('PPM JOBS', ppm);
-  }
-  txt += `${'═'.repeat(54)}
-`;
-  txt += `Orile Agege Undertaking | Akowonjo Business Unit
-`;
-  txt += `Ikeja Electric PLC — Distribution Operations`;
-  return txt;
-}
-
-// ── Build a fault card HTML ───────────────────────────────
-function buildFaultCard(f, sn, cardClass) {
-  const statusClass = { Pending:'bdg-pending', 'In Progress':'bdg-progress', Completed:'bdg-completed' };
-  const hasNotes = f.notes || f.resNotes || (f.followup && f.followup !== 'No — fault fully cleared');
-  return `
-    <div class="rep-fault-card ${cardClass}">
-      <div class="rep-fault-top">
-        <div>
-          <div class="rep-fault-title">
-            <span style="color:var(--text3);font-family:var(--mono);font-size:12px">${sn}.</span>
-            ${esc(f.ftype || '—')}${f.priority === 'PPM' ? ' <span style="color:#94a3b8;font-size:11px">[PPM]</span>' : ''}
-            <span>— ${esc(f.dt || '—')}</span>
-          </div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px">
-            📍 ${esc(f.location || '—')}
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-          <span class="bdg ${statusClass[f.status] || 'bdg-pending'}">${esc(f.status)}</span>
-          ${f.time ? `<span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${esc(faultTimeStr(f))}</span>` : ''}
-        </div>
-      </div>
-      <div class="rep-fault-grid">
-        <div class="rep-fault-field"><div class="rfk">Feeder</div><div class="rfv">${esc(f.feeder || '—')}</div></div>
-        <div class="rep-fault-field"><div class="rfk">Technician</div><div class="rfv">👷 ${esc(f.assigned || f.tech || '—')}</div></div>
-        <div class="rep-fault-field"><div class="rfk">Contact</div><div class="rfv">${f.phone ? `📞 ${esc(f.phone)}${f.cname ? ' · ' + esc(f.cname) : ''}` : (f.priority === 'PPM' ? '<em style="color:var(--text3)">PPM job</em>' : '<span style="color:var(--text3)">—</span>')}</div></div>
-        ${f.lastUpdatedBy ? `<div class="rep-fault-field" style="grid-column:1/-1"><div class="rfk">Last Updated</div><div class="rfv" style="color:var(--text2)">↑ ${esc(f.lastUpdatedBy)}${f.lastUpdatedAt ? '  <span style="color:var(--text3);font-family:var(--mono);font-size:11px">@ ' + fmtStamp(f.lastUpdatedAt) + '</span>' : ''}</div></div>` : ''}
-        ${f.clearTime ? `<div class="rep-fault-field"><div class="rfk">Cleared At</div><div class="rfv" style="color:var(--green)">✓ ${esc(f.clearTime)}</div></div>` : ''}
-      </div>
-      ${hasNotes ? `<div class="rep-fault-notes">
-        ${f.notes    ? `<div><strong>Notes:</strong> ${esc(f.notes)}</div>` : ''}
-        ${f.resNotes ? `<div><strong>Resolution:</strong> ${esc(f.resNotes)}</div>` : ''}
-        ${f.followup && f.followup !== 'No — fault fully cleared' ? `<div style="color:var(--orange)"><strong>Follow-up:</strong> ${esc(f.followup)}</div>` : ''}
-      </div>` : ''}
-    </div>`;
-}
-
 function generateReport() {
   const date   = document.getElementById('rep-date').value;
   const status = document.getElementById('rep-status').value;
@@ -1903,98 +1684,82 @@ function generateReport() {
     (!status || f.status === status)      &&
     (!feeder || f.feeder === feeder)
   );
-
-  const out = document.getElementById('report-out');
-
   if (!filtered.length) {
+    // If a date filter is active, check if there are faults on other dates
     if (date) {
-      const withoutDate = faults.filter(f => (!status || f.status === status) && (!feeder || f.feeder === feeder));
+      const withoutDate = faults.filter(f =>
+        (!status || f.status === status) &&
+        (!feeder || f.feeder === feeder)
+      );
       if (withoutDate.length) {
-        out.innerHTML = `<div class="rep-empty">
-          <div style="font-size:40px;margin-bottom:12px">📭</div>
-          <div style="font-size:15px;font-weight:700;color:var(--text2);margin-bottom:6px">No faults found for ${esc(date)}</div>
-          <div style="font-size:13px;color:var(--text3)">There are <strong>${withoutDate.length}</strong> fault(s) matching your other filters on different dates.<br>Clear the date field and click Generate to see them all.</div>
-        </div>`;
-        document.getElementById('report-text-copy').value = '';
+        document.getElementById('report-out').textContent =
+          `No faults found for ${date}.\n\n` +
+          `ℹ️  There are ${withoutDate.length} fault(s) matching your other filters on other dates.\n` +
+          `    → Clear the date field and click Generate to see all of them.`;
         return;
       }
     }
-    out.innerHTML = `<div class="rep-empty">
-      <div style="font-size:40px;margin-bottom:12px">📭</div>
-      <div style="font-size:15px;font-weight:700;color:var(--text2);margin-bottom:6px">No Faults Found</div>
-      <div style="font-size:13px;color:var(--text3)">No records match the selected filters. Try adjusting the date, status or feeder.</div>
-    </div>`;
-    document.getElementById('report-text-copy').value = '';
+    document.getElementById('report-out').textContent = 'No faults found for the selected filters.';
     return;
   }
-
-  // Store plain text version for copy button
-  document.getElementById('report-text-copy').value = buildReportText(filtered, date, status, feeder);
-
-  // ── Build visual HTML report ──
   const fmt = d => {
     try { return new Date(d).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' }); }
     catch(e) { return d; }
   };
-  const urgent   = filtered.filter(f => f.priority === 'Urgent');
-  const standard = filtered.filter(f => f.priority !== 'Urgent' && f.priority !== 'PPM');
-  const ppm      = filtered.filter(f => f.priority === 'PPM');
-  const pending   = filtered.filter(f => f.status === 'Pending').length;
-  const inprog    = filtered.filter(f => f.status === 'In Progress').length;
-  const completed = filtered.filter(f => f.status === 'Completed').length;
-
-  let sn = 1;
-  let html = '';
-
-  // Header banner
-  html += `<div class="rep-header">
-    <div class="rep-company">Ikeja Electric PLC · Orile Agege Undertaking</div>
-    <div class="rep-title">Daily Work Order Report</div>
-    <div class="rep-meta">${date ? fmt(date) : 'All Dates'} &nbsp;·&nbsp; Generated ${new Date().toLocaleString('en-GB')} &nbsp;·&nbsp; ${status || 'All Status'} | ${feeder ? feeder.split('—')[0].trim() : 'All Feeders'}</div>
-  </div>`;
-
-  // KPI row
-  html += `<div class="rep-kpis">
-    <div class="rep-kpi"><div class="rk-val sv-blue">${filtered.length}</div><div class="rk-lbl">Total Jobs</div></div>
-    <div class="rep-kpi"><div class="rk-val sv-red">${urgent.length}</div><div class="rk-lbl">Urgent</div></div>
-    <div class="rep-kpi"><div class="rk-val sv-yellow">${pending + inprog}</div><div class="rk-lbl">In Progress / Pending</div></div>
-    <div class="rep-kpi"><div class="rk-val sv-green">${completed}</div><div class="rk-lbl">Completed</div></div>
-  </div>`;
-
-  // Urgent section
+  const urgent = filtered.filter(f => f.priority === 'Urgent');
+  const others = filtered.filter(f => f.priority !== 'Urgent');
+  let sn = 1, txt = '';
+  txt += `IKEJA ELECTRIC PLC\n`;
+  txt += `ORILE AGEGE UNDERTAKING — AKOWONJO BUSINESS UNIT\n`;
+  txt += `${'═'.repeat(54)}\n`;
+  txt += `DAILY TECHNICAL WORK ORDER REPORT\n`;
+  txt += `Date     : ${date ? fmt(date) : 'All Dates'}\n`;
+  txt += `Generated: ${new Date().toLocaleString('en-GB')}\n`;
+  txt += `Filter   : ${status || 'All Status'}  |  ${feeder || 'All Feeders'}\n`;
+  txt += `${'─'.repeat(54)}\n`;
+  txt += `Total: ${filtered.length}  |  Urgent: ${urgent.length}  |  Pending: ${filtered.filter(f => f.status === 'Pending').length}  |  Completed: ${filtered.filter(f => f.status === 'Completed').length}\n`;
+  txt += `${'═'.repeat(54)}\n\n`;
   if (urgent.length) {
-    html += `<div class="rep-section rep-section-urgent">
-      <div class="rep-section-hdr">🚨 Urgent — Attend Immediately <span style="margin-left:auto;background:var(--red);color:#fff;border-radius:20px;padding:1px 10px;font-size:11px">${urgent.length}</span></div>`;
-    urgent.forEach(f => { html += buildFaultCard(f, sn++, 'urgent'); });
-    html += `</div>`;
+    txt += `⚠  URGENT — ATTEND IMMEDIATELY\n${'─'.repeat(54)}\n\n`;
+    urgent.forEach(f => {
+      txt += `${sn++}. ${f.ftype?.toUpperCase()} — ${f.dt}\n`;
+      txt += `   Location  : ${f.location}\n`;
+      txt += `   Feeder    : ${f.feeder}\n`;
+      txt += `   Technician: ${f.assigned || f.tech}\n`;
+      if (f.phone) txt += `   Contact   : ${f.phone}${f.cname ? ' (' + f.cname + ')' : ''}\n`;
+      txt += `   Status    : ${f.status}${f.clearTime ? '  — Cleared ' + f.clearTime : ''}\n`;
+      if (f.lastUpdatedBy) txt += `   Updated By: ${f.lastUpdatedBy}${f.lastUpdatedAt ? '  @ ' + fmtStamp(f.lastUpdatedAt) : ''}\n`;
+      if (f.notes)    txt += `   Notes     : ${f.notes}\n`;
+      if (f.resNotes) txt += `   Resolution: ${f.resNotes}\n`;
+      txt += '\n';
+    });
   }
-
-  // Standard section
-  if (standard.length) {
-    html += `<div class="rep-section rep-section-standard">
-      <div class="rep-section-hdr">🔧 Standard Jobs <span style="margin-left:auto;background:var(--blue);color:#fff;border-radius:20px;padding:1px 10px;font-size:11px">${standard.length}</span></div>`;
-    standard.forEach(f => { html += buildFaultCard(f, sn++, 'standard'); });
-    html += `</div>`;
+  if (others.length) {
+    txt += `STANDARD JOBS\n${'─'.repeat(54)}\n\n`;
+    others.forEach(f => {
+      txt += `${sn++}. ${f.ftype}${f.priority === 'PPM' ? ' [PPM]' : ''} — ${f.dt}\n`;
+      txt += `   Location  : ${f.location}\n`;
+      txt += `   Feeder    : ${f.feeder}\n`;
+      txt += `   Technician: ${f.assigned || f.tech}\n`;
+      if (f.phone) txt += `   Contact   : ${f.phone}${f.cname ? ' (' + f.cname + ')' : ''}\n`;
+      else if (f.priority === 'PPM') txt += `   Contact   : PPM — no customer contact\n`;
+      txt += `   Status    : ${f.status}${f.clearTime ? '  — Cleared ' + f.clearTime : ''}\n`;
+      if (f.lastUpdatedBy) txt += `   Updated By: ${f.lastUpdatedBy}${f.lastUpdatedAt ? '  @ ' + fmtStamp(f.lastUpdatedAt) : ''}\n`;
+      if (f.notes)    txt += `   Notes     : ${f.notes}\n`;
+      if (f.resNotes) txt += `   Resolution: ${f.resNotes}\n`;
+      if (f.followup && f.followup !== 'No — fault fully cleared') txt += `   Follow-up : ${f.followup}\n`;
+      txt += '\n';
+    });
   }
-
-  // PPM section
-  if (ppm.length) {
-    html += `<div class="rep-section rep-section-ppm">
-      <div class="rep-section-hdr">🔄 PPM Jobs <span style="margin-left:auto;background:#475569;color:#fff;border-radius:20px;padding:1px 10px;font-size:11px">${ppm.length}</span></div>`;
-    ppm.forEach(f => { html += buildFaultCard(f, sn++, 'ppm'); });
-    html += `</div>`;
-  }
-
-  // Footer
-  html += `<div class="rep-footer">Orile Agege Undertaking · Akowonjo Business Unit · Ikeja Electric PLC — Distribution Operations</div>`;
-
-  // Use innerHTML carefully — all user data passed through esc()
-  out.innerHTML = html;
+  txt += `${'═'.repeat(54)}\n`;
+  txt += `Orile Agege Undertaking | Akowonjo Business Unit\n`;
+  txt += `Ikeja Electric PLC — Distribution Operations`;
+  // textContent prevents any injected HTML from rendering
+  document.getElementById('report-out').textContent = txt;
 }
 
 function copyReport() {
-  const txt = document.getElementById('report-text-copy').value;
-  if (!txt) { showToast('Generate a report first.', 'error'); return; }
+  const txt = document.getElementById('report-out').textContent;
   navigator.clipboard.writeText(txt)
     .then(() => showToast('✓ Copied! Paste directly into WhatsApp.', 'success'))
     .catch(() => showToast('Select the text manually and copy.', 'error'));
@@ -2191,19 +1956,6 @@ function renderAnalytics() {
 }
 
 // ── INIT ──────────────────────────────────────────────────
-// One-time migration: wipe any old plain-text ie_passwords from previous versions.
-// getSavedPasswords() already filters them out, but this keeps localStorage clean.
-(function migratePasswords() {
-  try {
-    const raw = JSON.parse(localStorage.getItem('ie_passwords') || '{}');
-    const clean = {};
-    Object.entries(raw).forEach(([k, v]) => {
-      if (typeof v === 'string' && /^[0-9a-f]{64}$/.test(v)) clean[k] = v;
-    });
-    localStorage.setItem('ie_passwords', JSON.stringify(clean));
-  } catch(e) {}
-})();
-
 // Populate all dropdowns from the single TECHNICIANS source of truth.
 populateTechDropdowns();
 // Default date fields to today and time to current time.
@@ -2211,24 +1963,6 @@ const _today = nowDateStr();
 document.getElementById('r-date').value   = _today;
 document.getElementById('rep-date').value = _today;
 document.getElementById('r-time').value   = nowTimeStr();
-
-// ── SESSION RESTORE (survives page refresh) ────────────────
-// Reads sessionStorage so a user does not get logged out on F5 / reload.
-// sessionStorage is cleared automatically when the browser tab is closed.
-(function restoreSession() {
-  try {
-    const raw = sessionStorage.getItem('ie_session');
-    if (!raw) return;
-    const { username } = JSON.parse(raw);
-    const user = USERS.find(u => u.username === username);
-    if (!user) { sessionStorage.removeItem('ie_session'); return; }
-    currentUser = Object.freeze({ ...user });
-    isAdmin = currentUser.role === 'admin';
-    startApp(currentUser.name, currentUser.role);
-  } catch(e) {
-    sessionStorage.removeItem('ie_session');
-  }
-})();
 
 </script>
 </body>
