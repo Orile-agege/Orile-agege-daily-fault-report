@@ -333,6 +333,27 @@ textarea.fi-form{resize:vertical;min-height:80px}
 
 @media(max-width:900px){.wo-board{grid-template-columns:1fr}}
 
+/* ── WORK ORDER BOARD — RESPONSIVE OVERRIDES ── */
+@media(max-width:768px){
+  /* Filters bar: stack vertically, full width */
+  #page-workorders .card-header{flex-direction:column;align-items:flex-start}
+  #page-workorders .card-header > div:last-child{margin-left:0;width:100%}
+  #page-workorders .card-header > div:last-child .fi{flex:1;min-width:120px}
+  /* KPI strip: 2-column on small screens */
+  #wo-kpis{grid-template-columns:repeat(2,1fr)!important}
+  /* Checklist: single column on narrow cards */
+  .wo-steps{grid-template-columns:1fr}
+  /* Card meta: single column on very small screens */
+  .wo-card-meta{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  /* Rep KPIs (daily report) also 2-column */
+  .rep-kpis{grid-template-columns:repeat(2,1fr)}
+  /* Work order card top: stack priority below title */
+  .wo-card-top{flex-direction:column;gap:6px}
+  .wo-card-top > div:last-child{align-items:flex-start;flex-direction:row;gap:6px}
+}
+
 </style>
 </head>
 <body>
@@ -2234,6 +2255,235 @@ function renderAnalytics() {
       <td>${d.urgent ? `<span class="bdg bdg-urgent">🚨 ${d.urgent}</span>` : '<span style="color:var(--text3);font-size:12px">—</span>'}</td>
     </tr>
   `).join('');
+}
+
+// ── WORK ORDER BOARD ──────────────────────────────────────
+// Ordered steps for the per-card workflow checklist
+const WO_STEPS = [
+  { key: 'dispatched', label: 'Dispatched'     },
+  { key: 'assessed',   label: 'Fault Assessed' },
+  { key: 'isolated',   label: 'Area Isolated'  },
+  { key: 'repaired',   label: 'Fault Repaired' },
+  { key: 'tested',     label: 'Supply Tested'  },
+  { key: 'loggedrep',  label: 'Report Logged'  }
+];
+
+// Returns a coloured elapsed-time badge based on fault priority + age
+function elapsedBadge(f) {
+  if (!f.loggedAt && !f.date) return '';
+  const ref  = f.loggedAt ? new Date(f.loggedAt) : new Date(f.date);
+  const hrs  = (Date.now() - ref.getTime()) / 3600000;
+  const lbl  = hrs < 1   ? Math.round(hrs * 60) + 'm'
+             : hrs < 24  ? hrs.toFixed(1) + 'h'
+             : (hrs / 24).toFixed(1) + 'd';
+  const cls  = f.priority === 'Urgent'
+    ? (hrs > 2  ? 'elapsed-overdue' : hrs > 1 ? 'elapsed-warn' : 'elapsed-ok')
+    : (hrs > 24 ? 'elapsed-overdue' : hrs > 8 ? 'elapsed-warn' : 'elapsed-ok');
+  return `<span class="elapsed-badge ${cls}">⏱ ${lbl}</span>`;
+}
+
+function renderWorkOrders() {
+  const date     = document.getElementById('wo-date').value;
+  const feeder   = document.getElementById('wo-feeder').value;
+  const tech     = document.getElementById('wo-tech').value;
+  const priority = document.getElementById('wo-priority').value;
+
+  const filtered = faults.filter(f =>
+    (!date     || faultDateStr(f) === date)              &&
+    (!feeder   || f.feeder === feeder)                   &&
+    (!tech     || (f.assigned || f.tech) === tech)       &&
+    (!priority || f.priority === priority)
+  );
+
+  // ── KPI strip ──
+  const pending   = filtered.filter(f => f.status === 'Pending').length;
+  const inprog    = filtered.filter(f => f.status === 'In Progress').length;
+  const completed = filtered.filter(f => f.status === 'Completed').length;
+  document.getElementById('wo-kpis').innerHTML = `
+    <div class="rep-kpi"><div class="k-val sv-blue">${filtered.length}</div><div class="k-lbl">Total Jobs</div></div>
+    <div class="rep-kpi"><div class="k-val sv-yellow">${pending}</div><div class="k-lbl">Pending</div></div>
+    <div class="rep-kpi"><div class="k-val" style="color:var(--orange)">${inprog}</div><div class="k-lbl">In Progress</div></div>
+    <div class="rep-kpi"><div class="k-val sv-green">${completed}</div><div class="k-lbl">Completed</div></div>`;
+
+  const area = document.getElementById('wo-board-area');
+
+  if (!filtered.length) {
+    area.innerHTML = `
+      <div class="rep-empty">
+        <div class="rep-empty-icon">📋</div>
+        <div class="rep-empty-msg">No jobs match this filter</div>
+        <div class="rep-empty-sub">Try a different date or clear the filters above.</div>
+      </div>`;
+    return;
+  }
+
+  // Group into columns
+  const cols = {
+    'Pending':     { label: 'Pending',     cls: 'col-pending',  items: [] },
+    'In Progress': { label: 'In Progress', cls: 'col-progress', items: [] },
+    'Completed':   { label: 'Completed',   cls: 'col-done',     items: [] }
+  };
+  filtered.forEach(f => { if (cols[f.status]) cols[f.status].items.push(f); });
+
+  const accentCls  = { Urgent:'wo-card-accent-urgent', Standard:'wo-card-accent-standard', PPM:'wo-card-accent-ppm' };
+  const priorityBdg= { Urgent:'bdg-urgent', Standard:'bdg-standard', PPM:'bdg-ppm' };
+
+  function woCard(f) {
+    const steps = f.steps || {};
+    // Each label has onclick that calls toggleStep; event.preventDefault() stops
+    // the browser from auto-toggling the checkbox so our handler stays in control.
+    const stepHtml = WO_STEPS.map(s => `
+      <label class="wo-step${steps[s.key] ? ' step-done' : ''}"
+             onclick="toggleStep('${esc(f.id)}','${s.key}',this);event.preventDefault()">
+        <input type="checkbox" ${steps[s.key] ? 'checked' : ''}>
+        <span class="wo-step-label">${s.label}</span>
+      </label>`).join('');
+
+    const canAct = currentUser && (
+      currentUser.role === 'admin' ||
+      currentUser.role === 'manager' ||
+      currentUser.name === (f.assigned || f.tech)
+    );
+
+    let footer = '';
+    if (f.status === 'Completed') {
+      footer = `<div class="wo-card-completed-stamp">✅ Completed${f.clearTime ? ' · ' + esc(f.clearTime) : ''}</div>`;
+    } else if (canAct) {
+      footer = `
+        <div class="wo-card-footer">
+          <button class="btn btn-ghost btn-sm" onclick="openModal('${esc(f.id)}')">Update</button>
+          <button class="btn btn-success btn-sm"
+            onclick="requestQuickClose('${esc(f.id)}');setTimeout(renderWorkOrders,350)">✓ Done</button>
+        </div>`;
+    }
+
+    return `
+    <div class="wo-card">
+      <div class="wo-card-accent ${accentCls[f.priority] || 'wo-card-accent-standard'}"></div>
+      <div class="wo-card-body">
+        <div class="wo-card-top">
+          <div style="min-width:0">
+            <div class="wo-card-title">${esc(f.dt || '—')}</div>
+            <div class="wo-card-sub">${esc(f.ftype || '—')}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+            <span class="bdg ${priorityBdg[f.priority] || 'bdg-standard'}">${esc(f.priority || 'Standard')}</span>
+            ${elapsedBadge(f)}
+          </div>
+        </div>
+        <div class="wo-card-meta">
+          <div class="wo-meta-item">
+            <span class="wo-meta-label">📍 Location</span>
+            <span class="wo-meta-val">${esc(f.location || '—')}</span>
+          </div>
+          <div class="wo-meta-item">
+            <span class="wo-meta-label">👷 Technician</span>
+            <span class="wo-meta-val">${esc(f.assigned || f.tech || '—')}</span>
+          </div>
+          <div class="wo-meta-item">
+            <span class="wo-meta-label">📡 Feeder</span>
+            <span class="wo-meta-val" style="font-size:10px">${esc(f.feeder || '—')}</span>
+          </div>
+          ${f.phone ? `<div class="wo-meta-item"><span class="wo-meta-label">📞 Contact</span><span class="wo-meta-val">${esc(f.phone)}</span></div>` : ''}
+        </div>
+      </div>
+      <div class="wo-checklist">
+        <div class="wo-checklist-title">Workflow Checklist</div>
+        <div class="wo-steps">${stepHtml}</div>
+      </div>
+      ${footer}
+    </div>`;
+  }
+
+  area.innerHTML = `<div class="wo-board">
+    ${Object.entries(cols).map(([, col]) => `
+    <div class="wo-col">
+      <div class="wo-col-header ${col.cls}">
+        <span>${col.label}</span>
+        <span class="wo-col-count">${col.items.length}</span>
+      </div>
+      <div class="wo-col-body">
+        ${col.items.length
+          ? col.items.map(f => woCard(f)).join('')
+          : `<div class="wo-col-empty"><div class="wo-col-empty-icon">✓</div>Nothing here</div>`}
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// Toggle one checklist step on a work order card
+async function toggleStep(faultId, stepKey, labelEl) {
+  const f = faults.find(x => x.id === faultId);
+  if (!f) return;
+
+  const _canAct = currentUser && (
+    currentUser.role === 'admin' ||
+    currentUser.role === 'manager' ||
+    currentUser.name === (f.assigned || f.tech)
+  );
+  if (!_canAct) {
+    showToast('⛔ You can only update faults assigned to you.', 'error');
+    return;
+  }
+
+  if (!f.steps) f.steps = {};
+  f.steps[stepKey] = !f.steps[stepKey];
+
+  // Update UI optimistically — no full re-render needed
+  const cb = labelEl ? labelEl.querySelector('input[type=checkbox]') : null;
+  if (cb) cb.checked = f.steps[stepKey];
+  if (labelEl) {
+    if (f.steps[stepKey]) labelEl.classList.add('step-done');
+    else labelEl.classList.remove('step-done');
+  }
+
+  await saveFaultsLocal();
+}
+
+// Copy a plain-text work order summary to clipboard
+function copyWorkOrderReport() {
+  const date     = document.getElementById('wo-date').value;
+  const feeder   = document.getElementById('wo-feeder').value;
+  const tech     = document.getElementById('wo-tech').value;
+  const priority = document.getElementById('wo-priority').value;
+
+  const filtered = faults.filter(f =>
+    (!date     || faultDateStr(f) === date)              &&
+    (!feeder   || f.feeder === feeder)                   &&
+    (!tech     || (f.assigned || f.tech) === tech)       &&
+    (!priority || f.priority === priority)
+  );
+
+  if (!filtered.length) { showToast('No jobs to copy.', 'error'); return; }
+
+  const fmt = d => {
+    try { return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+    catch(e) { return d; }
+  };
+
+  let txt = `IKEJA ELECTRIC — WORK ORDER BOARD\n`;
+  txt += `${fmt(date || new Date().toISOString().slice(0, 10))}\n`;
+  txt += `${'═'.repeat(44)}\n`;
+  txt += `Total: ${filtered.length}  |  Pending: ${filtered.filter(f=>f.status==='Pending').length}  |  In Progress: ${filtered.filter(f=>f.status==='In Progress').length}  |  Done: ${filtered.filter(f=>f.status==='Completed').length}\n\n`;
+
+  ['Urgent', 'Standard', 'PPM'].forEach(p => {
+    const grp = filtered.filter(f => f.priority === p);
+    if (!grp.length) return;
+    txt += `── ${p.toUpperCase()} ──\n`;
+    grp.forEach((f, i) => {
+      txt += `${i + 1}. ${f.dt} — ${f.ftype}\n`;
+      txt += `   📍 ${f.location}  👷 ${f.assigned || f.tech || '—'}  📊 ${f.status}\n`;
+      const done = WO_STEPS.filter(s => f.steps && f.steps[s.key]).map(s => s.label);
+      if (done.length) txt += `   ✅ Done: ${done.join(', ')}\n`;
+      txt += '\n';
+    });
+  });
+
+  txt += `Orile Agege Undertaking | Akowonjo Business Unit | Ikeja Electric PLC`;
+
+  navigator.clipboard.writeText(txt)
+    .then(() => showToast('✓ Work order summary copied!', 'success'))
+    .catch(() => showToast('Copy failed — try manually.', 'error'));
 }
 
 // ── INIT ──────────────────────────────────────────────────
