@@ -200,7 +200,47 @@ textarea.fi-form{resize:vertical;min-height:80px}
 .team-btn:hover{border-color:var(--blue);color:var(--blue)}
 
 /* ── REPORT ── */
-.report-out{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;white-space:pre-wrap;font-family:var(--mono);font-size:12px;line-height:1.9;color:var(--text);min-height:120px}
+.report-out{display:none} /* hidden — only used for clipboard copy */
+/* ── VISUAL REPORT ── */
+.report-visual{min-height:120px}
+.rep-header{background:linear-gradient(135deg,var(--sidebar) 0%,#1a56db 100%);color:#fff;border-radius:12px;padding:20px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.rep-header::after{content:'⚡';position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:64px;opacity:.08;pointer-events:none}
+.rep-company{font-size:15px;font-weight:700;letter-spacing:.03em;margin-bottom:2px}
+.rep-sub{font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.rep-meta{display:flex;gap:20px;flex-wrap:wrap}
+.rep-meta-item{display:flex;flex-direction:column;gap:2px}
+.rep-meta-label{font-size:9px;opacity:.55;text-transform:uppercase;letter-spacing:.1em}
+.rep-meta-val{font-size:12px;font-weight:600;font-family:var(--mono)}
+.rep-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.rep-kpi{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center}
+.rep-kpi .k-val{font-size:26px;font-weight:700;font-family:var(--mono);line-height:1}
+.rep-kpi .k-lbl{font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.rep-section-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:8px 14px;border-radius:8px;margin-bottom:10px}
+.rep-section-urgent{background:var(--red-light);color:var(--red)}
+.rep-section-standard{background:var(--blue-light);color:var(--blue)}
+.rep-section-ppm{background:#f1f5f9;color:#64748b}
+.rep-fault-card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;display:flex;gap:0}
+.rep-fault-accent{width:4px;flex-shrink:0}
+.rep-fault-accent-urgent{background:var(--red)}
+.rep-fault-accent-standard{background:var(--blue)}
+.rep-fault-accent-ppm{background:#94a3b8}
+.rep-fault-body{padding:12px 16px;flex:1;min-width:0}
+.rep-fault-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.rep-fault-num{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px;flex-shrink:0}
+.rep-fault-title{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+.rep-fault-type{font-size:11px;color:var(--text2);margin-top:1px}
+.rep-fault-badges{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap}
+.rep-fault-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+.rep-field{display:flex;flex-direction:column;gap:1px}
+.rep-field-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.rep-field-val{font-size:12px;color:var(--text);font-weight:500}
+.rep-field-full{grid-column:1/-1}
+.rep-notes{background:#fafbfc;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--text2);margin-top:10px;line-height:1.5}
+.rep-footer{text-align:center;font-size:11px;color:var(--text3);padding:14px 0 4px;border-top:1px solid var(--border);margin-top:4px}
+.rep-empty{text-align:center;padding:48px 24px;color:var(--text3)}
+.rep-empty-icon{font-size:40px;margin-bottom:12px}
+.rep-empty-msg{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.rep-empty-sub{font-size:12px}
 
 /* ── LOADING ── */
 .loading{text-align:center;padding:32px;color:var(--text3);font-size:13px}
@@ -522,9 +562,9 @@ textarea.fi-form{resize:vertical;min-height:80px}
       <!-- ══ PAGE: DAILY REPORT ══════════════════════════════ -->
       <div id="page-daily" style="display:none">
         <div class="card">
-          <div class="card-header"><div class="card-title">📋 Daily Work Order Report</div></div>
-          <div class="card-body">
-            <div class="filters" style="margin-bottom:16px">
+          <div class="card-header" style="gap:16px;flex-wrap:wrap">
+            <div class="card-title">📋 Daily Work Order Report</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:auto">
               <input class="fi" type="date" id="rep-date" style="width:auto">
               <select class="fi" id="rep-status" style="width:auto">
                 <option value="">All Status</option>
@@ -539,9 +579,20 @@ textarea.fi-form{resize:vertical;min-height:80px}
                 <option>OgbaTCN — Abeokuta Exp.</option><option>MaplewoodINJ</option><option>Other</option>
               </select>
               <button class="btn btn-primary" onclick="generateReport()">Generate</button>
-              <button class="btn btn-ghost" onclick="copyReport()">📋 Copy</button>
+              <button class="btn btn-ghost" onclick="copyReport()" title="Copy plain-text report for WhatsApp">📋 Copy</button>
             </div>
-            <div class="report-out" id="report-out">Select a date and click Generate to create your daily work order report.</div>
+          </div>
+          <div class="card-body">
+            <!-- Visual HTML report (shown to user) -->
+            <div class="report-visual" id="report-visual">
+              <div class="rep-empty">
+                <div class="rep-empty-icon">📋</div>
+                <div class="rep-empty-msg">No report generated yet</div>
+                <div class="rep-empty-sub">Select a date and click <strong>Generate</strong> to view your daily work order report.</div>
+              </div>
+            </div>
+            <!-- Hidden plain-text for clipboard copy -->
+            <div class="report-out" id="report-out"></div>
           </div>
         </div>
       </div>
@@ -1675,37 +1726,10 @@ function faultTimeStr(f) {
   } catch(e) {}
   return f.time.slice(0, 5);
 }
-function generateReport() {
-  const date   = document.getElementById('rep-date').value;
-  const status = document.getElementById('rep-status').value;
-  const feeder = document.getElementById('rep-feeder').value;
-  let filtered = faults.filter(f =>
-    (!date   || faultDateStr(f) === date) &&
-    (!status || f.status === status)      &&
-    (!feeder || f.feeder === feeder)
-  );
-  if (!filtered.length) {
-    // If a date filter is active, check if there are faults on other dates
-    if (date) {
-      const withoutDate = faults.filter(f =>
-        (!status || f.status === status) &&
-        (!feeder || f.feeder === feeder)
-      );
-      if (withoutDate.length) {
-        document.getElementById('report-out').textContent =
-          `No faults found for ${date}.\n\n` +
-          `ℹ️  There are ${withoutDate.length} fault(s) matching your other filters on other dates.\n` +
-          `    → Clear the date field and click Generate to see all of them.`;
-        return;
-      }
-    }
-    document.getElementById('report-out').textContent = 'No faults found for the selected filters.';
-    return;
-  }
-  const fmt = d => {
-    try { return new Date(d).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' }); }
-    catch(e) { return d; }
-  };
+// ── DAILY REPORT — plain text for clipboard ───────────────
+let _reportPlainText = '';
+
+function buildPlainText(filtered, date, status, feeder, fmt) {
   const urgent = filtered.filter(f => f.priority === 'Urgent');
   const others = filtered.filter(f => f.priority !== 'Urgent');
   let sn = 1, txt = '';
@@ -1754,8 +1778,161 @@ function generateReport() {
   txt += `${'═'.repeat(54)}\n`;
   txt += `Orile Agege Undertaking | Akowonjo Business Unit\n`;
   txt += `Ikeja Electric PLC — Distribution Operations`;
-  // textContent prevents any injected HTML from rendering
-  document.getElementById('report-out').textContent = txt;
+  return txt;
+}
+
+function generateReport() {
+  const date   = document.getElementById('rep-date').value;
+  const status = document.getElementById('rep-status').value;
+  const feeder = document.getElementById('rep-feeder').value;
+  let filtered = faults.filter(f =>
+    (!date   || faultDateStr(f) === date) &&
+    (!status || f.status === status)      &&
+    (!feeder || f.feeder === feeder)
+  );
+
+  const visual  = document.getElementById('report-visual');
+  const rawDiv  = document.getElementById('report-out');
+
+  if (!filtered.length) {
+    let msg = 'No faults found for the selected filters.';
+    let sub = '';
+    if (date) {
+      const withoutDate = faults.filter(f =>
+        (!status || f.status === status) && (!feeder || f.feeder === feeder));
+      if (withoutDate.length) {
+        msg = `No faults found for ${date}.`;
+        sub = `There are ${withoutDate.length} fault(s) matching your other filters on other dates. Clear the date field and click Generate to see all of them.`;
+      }
+    }
+    visual.innerHTML = `<div class="rep-empty"><div class="rep-empty-icon">🔍</div><div class="rep-empty-msg">${esc(msg)}</div>${sub ? `<div class="rep-empty-sub">${esc(sub)}</div>` : ''}</div>`;
+    _reportPlainText = '';
+    rawDiv.textContent = '';
+    return;
+  }
+
+  const fmt = d => {
+    try { return new Date(d).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' }); }
+    catch(e) { return d; }
+  };
+
+  const urgent   = filtered.filter(f => f.priority === 'Urgent');
+  const standard = filtered.filter(f => f.priority === 'Standard');
+  const ppm      = filtered.filter(f => f.priority === 'PPM');
+  const pending   = filtered.filter(f => f.status === 'Pending').length;
+  const completed = filtered.filter(f => f.status === 'Completed').length;
+  const inprog    = filtered.filter(f => f.status === 'In Progress').length;
+
+  const statusBadge = s => {
+    const cls = { Pending:'bdg-pending', 'In Progress':'bdg-progress', Completed:'bdg-completed' };
+    return `<span class="bdg ${cls[s] || 'bdg-pending'}">${esc(s)}</span>`;
+  };
+
+  const faultCard = (f, sn, accentClass) => {
+    const hasMeta = f.phone || f.cname || f.notes || f.resNotes || f.followup;
+    return `
+    <div class="rep-fault-card">
+      <div class="rep-fault-accent ${accentClass}"></div>
+      <div class="rep-fault-body">
+        <div class="rep-fault-header">
+          <div style="min-width:0">
+            <div class="rep-fault-title">${esc(f.dt || '—')}</div>
+            <div class="rep-fault-type">${esc(f.ftype || '—')}</div>
+          </div>
+          <div class="rep-fault-badges">
+            <span class="rep-fault-num">#${sn}</span>
+            ${statusBadge(f.status || 'Pending')}
+          </div>
+        </div>
+        <div class="rep-fault-grid">
+          <div class="rep-field">
+            <div class="rep-field-label">📍 Location</div>
+            <div class="rep-field-val">${esc(f.location || '—')}</div>
+          </div>
+          <div class="rep-field">
+            <div class="rep-field-label">📡 Feeder</div>
+            <div class="rep-field-val">${esc(f.feeder || '—')}</div>
+          </div>
+          <div class="rep-field">
+            <div class="rep-field-label">🔧 Technician</div>
+            <div class="rep-field-val">${esc(f.assigned || f.tech || '—')}</div>
+          </div>
+          <div class="rep-field">
+            <div class="rep-field-label">🕐 Time Logged</div>
+            <div class="rep-field-val">${esc(faultTimeStr(f) || '—')}</div>
+          </div>
+          ${f.phone ? `<div class="rep-field"><div class="rep-field-label">📞 Contact</div><div class="rep-field-val">${esc(f.phone)}${f.cname ? ' — ' + esc(f.cname) : ''}</div></div>` : ''}
+          ${f.clearTime ? `<div class="rep-field"><div class="rep-field-label">✅ Cleared</div><div class="rep-field-val">${esc(f.clearTime)}</div></div>` : ''}
+          ${f.lastUpdatedBy ? `<div class="rep-field"><div class="rep-field-label">✏ Updated By</div><div class="rep-field-val">${esc(f.lastUpdatedBy)}</div></div>` : ''}
+        </div>
+        ${(f.notes || f.resNotes || (f.followup && f.followup !== 'No — fault fully cleared')) ? `
+        <div class="rep-notes">
+          ${f.notes    ? `<div><strong>Notes:</strong> ${esc(f.notes)}</div>` : ''}
+          ${f.resNotes ? `<div><strong>Resolution:</strong> ${esc(f.resNotes)}</div>` : ''}
+          ${f.followup && f.followup !== 'No — fault fully cleared' ? `<div><strong>Follow-up:</strong> ${esc(f.followup)}</div>` : ''}
+        </div>` : ''}
+      </div>
+    </div>`;
+  };
+
+  let sn = 1;
+  let html = '';
+
+  // ── Header ──
+  html += `
+  <div class="rep-header">
+    <div class="rep-company">⚡ IKEJA ELECTRIC PLC</div>
+    <div class="rep-sub">Orile Agege Undertaking — Akowonjo Business Unit</div>
+    <div class="rep-meta">
+      <div class="rep-meta-item">
+        <span class="rep-meta-label">Report Date</span>
+        <span class="rep-meta-val">${esc(date ? fmt(date) : 'All Dates')}</span>
+      </div>
+      <div class="rep-meta-item">
+        <span class="rep-meta-label">Generated</span>
+        <span class="rep-meta-val">${esc(new Date().toLocaleString('en-GB'))}</span>
+      </div>
+      <div class="rep-meta-item">
+        <span class="rep-meta-label">Filter</span>
+        <span class="rep-meta-val">${esc(status || 'All Status')} · ${esc(feeder || 'All Feeders')}</span>
+      </div>
+    </div>
+  </div>`;
+
+  // ── KPI Summary ──
+  html += `<div class="rep-kpis">
+    <div class="rep-kpi"><div class="k-val sv-blue">${filtered.length}</div><div class="k-lbl">Total Jobs</div></div>
+    <div class="rep-kpi"><div class="k-val sv-red">${urgent.length}</div><div class="k-lbl">Urgent</div></div>
+    <div class="rep-kpi"><div class="k-val sv-yellow">${pending}</div><div class="k-lbl">Pending</div></div>
+    <div class="rep-kpi"><div class="k-val sv-green">${completed}</div><div class="k-lbl">Completed</div></div>
+  </div>`;
+
+  // ── Urgent Jobs ──
+  if (urgent.length) {
+    html += `<div class="rep-section-title rep-section-urgent">🚨 Urgent — Attend Immediately (${urgent.length})</div>`;
+    urgent.forEach(f => { html += faultCard(f, sn++, 'rep-fault-accent-urgent'); });
+  }
+
+  // ── Standard Jobs ──
+  if (standard.length) {
+    html += `<div class="rep-section-title rep-section-standard" style="margin-top:${urgent.length?'16px':'0'}">📋 Standard Jobs (${standard.length})</div>`;
+    standard.forEach(f => { html += faultCard(f, sn++, 'rep-fault-accent-standard'); });
+  }
+
+  // ── PPM Jobs ──
+  if (ppm.length) {
+    html += `<div class="rep-section-title rep-section-ppm" style="margin-top:${(urgent.length||standard.length)?'16px':'0'}">🔩 PPM Jobs (${ppm.length})</div>`;
+    ppm.forEach(f => { html += faultCard(f, sn++, 'rep-fault-accent-ppm'); });
+  }
+
+  // ── Footer ──
+  html += `<div class="rep-footer">Orile Agege Undertaking · Akowonjo Business Unit · Ikeja Electric PLC — Distribution Operations</div>`;
+
+  visual.innerHTML = html;
+
+  // Build & stash plain text for clipboard
+  _reportPlainText = buildPlainText(filtered, date, status, feeder, fmt);
+  rawDiv.textContent = _reportPlainText;
 }
 
 function copyReport() {
