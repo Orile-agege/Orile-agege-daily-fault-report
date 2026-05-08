@@ -685,12 +685,18 @@ textarea.fi-form{resize:vertical;min-height:80px}
             <option>Pending</option><option>In Progress</option><option>Completed</option>
           </select>
         </div>
-        <div class="fg">
+        <div class="fg" id="m-reassign-row">
           <label class="fl">Reassign To</label>
-          <!-- Populated dynamically from TECHNICIANS array -->
+          <!-- Populated dynamically from TECHNICIANS array. Shown to admin/manager only. -->
           <select class="fi-form" id="m-tech">
             <option value="">— no change —</option>
           </select>
+        </div>
+        <!-- Cleared-at timestamp — shown when fault is already Completed (admin view) -->
+        <div class="fg" id="m-cleared-row" style="display:none">
+          <label class="fl">Cleared At</label>
+          <input class="fi-form" type="text" id="m-cleared-display" readonly
+            style="background:#f8fafc;color:var(--text2);cursor:default">
         </div>
         <div class="fg">
           <label class="fl">Resolution Notes</label>
@@ -766,6 +772,23 @@ let lastSyncTime = 0;
 // Escape user-supplied strings before inserting into innerHTML.
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── TIME HELPERS ──────────────────────────────────────────
+// Returns current local time as "HH:MM" string.
+function nowTimeStr() {
+  const n = new Date();
+  return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+// Returns current local date as "YYYY-MM-DD" string.
+function nowDateStr() {
+  return new Date().toISOString().split('T')[0];
+}
+// Formats an ISO timestamp for display: "DD/MM/YYYY HH:MM"
+function fmtISO(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB') + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
 }
 
 // ── TOAST NOTIFICATION (replaces all alert() calls) ───────
@@ -996,6 +1019,10 @@ function startApp(name, role) {
     techSel.disabled = true; // Lock: can't report as someone else
   }
 
+  // ── Auto-snap date & time on login ──
+  document.getElementById('r-date').value = nowDateStr();
+  document.getElementById('r-time').value = nowTimeStr();
+
   loadFaults();
 }
 
@@ -1025,6 +1052,11 @@ function showPage(p, navEl) {
   if (p === 'analytics') renderAnalytics();
   // Auto-generate report with today's date when navigating to daily page
   if (p === 'daily' && faults.length) generateReport();
+  // Refresh date+time snap every time user opens Log Fault
+  if (p === 'log') {
+    document.getElementById('r-date').value = nowDateStr();
+    document.getElementById('r-time').value = nowTimeStr();
+  }
 }
 
 function toggleSidebar() {
@@ -1107,6 +1139,21 @@ function renderTable() {
   });
 
   tbody.innerHTML = sorted.map((f, i) => {
+    const isAdminOrManager = currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager');
+    const isAssigned       = currentUser && (currentUser.name === (f.assigned || f.tech));
+    const isCompleted      = f.status === 'Completed';
+
+    // Admin/Manager: can edit any fault that isn't completed (admin can also reopen completed via admin panel)
+    // Technician: can only edit their own assigned faults that aren't yet completed
+    const canEdit  = isAdminOrManager || (isAssigned && !isCompleted);
+    const canClose = canEdit && !isCompleted;
+
+    const updateBtn = canEdit
+      ? `<button class="btn btn-ghost btn-sm" onclick="openModal('${esc(f.id)}')">Update</button>`
+      : (isCompleted ? `<span style="font-size:11px;color:var(--text3)">🔒 Closed</span>` : '');
+    const closeBtn = canClose
+      ? `<button class="btn btn-success btn-sm" onclick="requestQuickClose('${esc(f.id)}')">✓</button>`
+      : '';
     const adminDelete = (currentUser && currentUser.role === 'admin')
       ? `<button class="btn btn-danger btn-sm" onclick="requestDelete('${esc(f.id)}')">🗑</button>`
       : '';
@@ -1125,12 +1172,13 @@ function renderTable() {
       </td>
       <td style="font-size:12px">${esc(f.ftype) || '—'}</td>
       <td><span class="bdg ${pc[f.priority] || 'bdg-standard'}">${esc(f.priority) || '—'}</span></td>
-      <td><span class="bdg ${sc[f.status] || 'bdg-pending'}">${esc(f.status) || 'Pending'}</span></td>
+      <td>
+        <span class="bdg ${sc[f.status] || 'bdg-pending'}">${esc(f.status) || 'Pending'}</span>
+        ${isCompleted && f.clearTime ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">✓ ${esc(f.clearTime)}</div>` : ''}
+      </td>
       <td style="font-size:12px">${esc(f.assigned || f.tech) || '—'}</td>
       <td id="actions-${esc(f.id)}" style="white-space:nowrap;display:flex;gap:4px;align-items:center">
-        <button class="btn btn-ghost btn-sm" onclick="openModal('${esc(f.id)}')">Update</button>
-        <button class="btn btn-success btn-sm" onclick="requestQuickClose('${esc(f.id)}')">✓</button>
-        ${adminDelete}
+        ${updateBtn}${closeBtn}${adminDelete}
       </td>
     </tr>`;
   }).join('');
@@ -1235,8 +1283,9 @@ async function logFault() {
       priority, assigned,
       status:   document.getElementById('r-status').value,
       notes:    document.getElementById('r-notes').value.trim(),
-      resNotes: '', followup: '', closedAt: null,
-      loggedAt: new Date().toISOString()
+      resNotes: '', followup: '', closedAt: null, clearTime: null,
+      loggedAt: new Date().toISOString(),
+      reportTime: time   // human-readable snap of the reported time
     };
 
     faults.push(fault);
@@ -1281,10 +1330,40 @@ function openModal(id) {
   editingId = id;
   const f = faults.find(x => x.id === id);
   if (!f) return;
-  document.getElementById('m-status').value  = f.status;
-  document.getElementById('m-notes').value   = f.resNotes || '';
+
+  const isAdminOrManager = currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager');
+  const isAdmin          = currentUser && currentUser.role === 'admin';
+  const isAssigned       = currentUser && (currentUser.name === (f.assigned || f.tech));
+  const isCompleted      = f.status === 'Completed';
+
+  // ── Permission gate ──
+  if (!isAdminOrManager && !isAssigned) {
+    showToast('⛔ You can only update faults assigned to you.', 'error');
+    return;
+  }
+  if (isCompleted && !isAdmin) {
+    showToast('🔒 This fault is completed. Only admin can reopen it.', 'error');
+    return;
+  }
+
+  // ── Populate fields ──
+  document.getElementById('m-status').value   = f.status;
+  document.getElementById('m-notes').value    = f.resNotes || '';
   document.getElementById('m-followup').value = f.followup || 'No — fault fully cleared';
-  document.getElementById('m-tech').value    = '';
+  document.getElementById('m-tech').value     = '';
+
+  // ── Show reassign row only for admin/manager (Issue 3) ──
+  document.getElementById('m-reassign-row').style.display = isAdminOrManager ? '' : 'none';
+
+  // ── Show cleared-at timestamp if already completed ──
+  const clearedRow = document.getElementById('m-cleared-row');
+  if (isCompleted && f.closedAt) {
+    document.getElementById('m-cleared-display').value = fmtISO(f.closedAt) + (f.clearTime ? ' (cleared ' + esc(f.clearTime) + ')' : '');
+    clearedRow.style.display = '';
+  } else {
+    clearedRow.style.display = 'none';
+  }
+
   // Use textContent (not innerHTML) for user data in the modal subtitle
   document.getElementById('modal-sub').textContent = `${f.ftype || ''} — ${f.dt || ''} (${f.location || ''})`;
   document.getElementById('modal').style.display = 'flex';
@@ -1295,16 +1374,47 @@ function modalClickOut(e) { if (e.target.id === 'modal') closeModal(); }
 async function updateFault() {
   const f = faults.find(x => x.id === editingId);
   if (!f) return;
-  f.status   = document.getElementById('m-status').value;
+
+  const isAdminOrManager = currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager');
+  const isAdmin          = currentUser && currentUser.role === 'admin';
+  const isAssigned       = currentUser && (currentUser.name === (f.assigned || f.tech));
+
+  // ── Permission gate (double-check even though openModal already checked) ──
+  if (!isAdminOrManager && !isAssigned) {
+    showToast('⛔ You can only update faults assigned to you.', 'error');
+    closeModal();
+    return;
+  }
+  if (f.status === 'Completed' && !isAdmin) {
+    showToast('🔒 Only admin can reopen a completed fault.', 'error');
+    closeModal();
+    return;
+  }
+
+  const newStatus = document.getElementById('m-status').value;
+  f.status   = newStatus;
   f.resNotes = document.getElementById('m-notes').value;
   f.followup = document.getElementById('m-followup').value;
+
+  // ── Reassign only if admin/manager and a new value was chosen ──
   const t = document.getElementById('m-tech').value;
-  if (t) f.assigned = t;
-  if (f.status === 'Completed') f.closedAt = new Date().toISOString();
+  if (t && isAdminOrManager) f.assigned = t;
+
+  // ── Auto-stamp cleared time when marking Completed ──
+  if (newStatus === 'Completed' && !f.closedAt) {
+    f.closedAt  = new Date().toISOString();
+    f.clearTime = nowTimeStr();
+  }
+
+  // ── Audit trail ──
+  f.lastUpdatedBy = currentUser.name;
+  f.lastUpdatedAt = new Date().toISOString();
+
   await saveFaultsLocal();
   renderStats(); renderTable();
   renderPendingTasksSidebar();
   closeModal();
+  showToast('✓ Fault updated successfully.', 'success');
 }
 
 // ── INLINE CONFIRM: QUICK CLOSE ───────────────────────────
@@ -1338,10 +1448,32 @@ function requestQuickClose(id) {
 async function confirmQuickClose(id) {
   const f = faults.find(x => x.id === id);
   if (!f) return;
-  f.status   = 'Completed';
-  f.closedAt = new Date().toISOString();
+
+  const isAdminOrManager = currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager');
+  const isAssigned       = currentUser && (currentUser.name === (f.assigned || f.tech));
+
+  // ── Permission gate ──
+  if (!isAdminOrManager && !isAssigned) {
+    showToast('⛔ You can only close faults assigned to you.', 'error');
+    renderTable();
+    return;
+  }
+  if (f.status === 'Completed') {
+    showToast('ℹ️ This fault is already completed.', 'error');
+    renderTable();
+    return;
+  }
+
+  // ── Auto-stamp cleared time ──
+  f.status        = 'Completed';
+  f.closedAt      = new Date().toISOString();
+  f.clearTime     = nowTimeStr();
+  f.lastUpdatedBy = currentUser.name;
+  f.lastUpdatedAt = new Date().toISOString();
+
   await saveFaultsLocal();
   renderStats(); renderTable(); renderPendingTasksSidebar();
+  showToast(`✓ Fault marked completed at ${f.clearTime}.`, 'success');
 }
 
 // ── INLINE CONFIRM: DELETE ────────────────────────────────
@@ -1474,7 +1606,7 @@ function generateReport() {
       txt += `   Feeder    : ${f.feeder}\n`;
       txt += `   Technician: ${f.assigned || f.tech}\n`;
       if (f.phone) txt += `   Contact   : ${f.phone}${f.cname ? ' (' + f.cname + ')' : ''}\n`;
-      txt += `   Status    : ${f.status}\n`;
+      txt += `   Status    : ${f.status}${f.clearTime ? ' — Cleared ' + f.clearTime : ''}\n`;
       if (f.notes)    txt += `   Notes     : ${f.notes}\n`;
       if (f.resNotes) txt += `   Resolution: ${f.resNotes}\n`;
       txt += '\n';
@@ -1489,7 +1621,7 @@ function generateReport() {
       txt += `   Technician: ${f.assigned || f.tech}\n`;
       if (f.phone) txt += `   Contact   : ${f.phone}${f.cname ? ' (' + f.cname + ')' : ''}\n`;
       else if (f.priority === 'PPM') txt += `   Contact   : PPM — no customer contact\n`;
-      txt += `   Status    : ${f.status}\n`;
+      txt += `   Status    : ${f.status}${f.clearTime ? ' — Cleared ' + f.clearTime : ''}\n`;
       if (f.notes)    txt += `   Notes     : ${f.notes}\n`;
       if (f.resNotes) txt += `   Resolution: ${f.resNotes}\n`;
       if (f.followup && f.followup !== 'No — fault fully cleared') txt += `   Follow-up : ${f.followup}\n`;
@@ -1703,10 +1835,11 @@ function renderAnalytics() {
 // ── INIT ──────────────────────────────────────────────────
 // Populate all dropdowns from the single TECHNICIANS source of truth.
 populateTechDropdowns();
-// Default both date fields to today.
+// Default both date and time fields to now (startApp also refreshes these on login).
 const _today = new Date().toISOString().split('T')[0];
 document.getElementById('r-date').value   = _today;
 document.getElementById('rep-date').value = _today;
+document.getElementById('r-time').value   = nowTimeStr();
 
 </script>
 </body>
