@@ -1109,21 +1109,47 @@ function renderStats() {
   const p  = faults.filter(f => f.status === 'Pending').length;
   const ip = faults.filter(f => f.status === 'In Progress').length;
   const d  = faults.filter(f => f.status === 'Completed').length;
-  document.getElementById('stats-row').innerHTML = `
-    <div class="stat"><div class="stat-icon si-blue">📊</div><div class="stat-info"><div class="label">Total Faults</div><div class="val sv-blue">${t}</div><div class="sub">All time</div></div></div>
-    <div class="stat"><div class="stat-icon si-red">⚠️</div><div class="stat-info"><div class="label">Pending</div><div class="val sv-red">${p}</div><div class="sub">Needs attention</div></div></div>
-    <div class="stat"><div class="stat-icon si-yellow">🔧</div><div class="stat-info"><div class="label">In Progress</div><div class="val sv-yellow">${ip}</div><div class="sub">Being worked on</div></div></div>
-    <div class="stat"><div class="stat-icon si-green">✅</div><div class="stat-info"><div class="label">Completed</div><div class="val sv-green">${d}</div><div class="sub">Resolved</div></div></div>
-  `;
+  const cur = document.getElementById('f-status').value;
+
+  // Each card is clickable: sets the Status filter and re-renders the table.
+  // Clicking the already-active card toggles it back to "All".
+  const makeCard = (label, val, count, sub, iconCls, icon) => {
+    const active = cur === val;
+    return `<div class="stat" style="cursor:pointer;transition:box-shadow .15s,transform .1s;${active ? 'box-shadow:0 0 0 2.5px var(--blue);transform:translateY(-2px)' : ''}"
+      onclick="filterByStatus('${val}')" title="Click to filter by ${label}">
+      <div class="stat-icon ${iconCls}">${icon}</div>
+      <div class="stat-info">
+        <div class="label">${label}</div>
+        <div class="val ${iconCls.replace('si-','sv-')}">${count}</div>
+        <div class="sub">${sub}</div>
+      </div>
+    </div>`;
+  };
+  document.getElementById('stats-row').innerHTML =
+    makeCard('Total Faults', '',          t,  'All time',       'si-blue',   '📊') +
+    makeCard('Pending',       'Pending',   p,  'Needs attention','si-red',    '⚠️') +
+    makeCard('In Progress',   'In Progress',ip,'Being worked on','si-yellow', '🔧') +
+    makeCard('Completed',     'Completed', d,  'Resolved',       'si-green',  '✅');
+
   const adminTotal = document.getElementById('admin-total');
   if (adminTotal) adminTotal.textContent = t;
+}
+
+// Called by stat card clicks
+function filterByStatus(val) {
+  const sel = document.getElementById('f-status');
+  // Toggle off if already active
+  sel.value = sel.value === val ? '' : val;
+  renderStats();   // re-render cards so active ring updates
+  renderTable();
 }
 
 // ── DATE FILTER DROPDOWN ──────────────────────────────────
 function populateDateFilter() {
   const sel  = document.getElementById('f-date');
   const cur  = sel.value;
-  const dates = [...new Set(faults.map(f => f.date).filter(Boolean))].sort().reverse();
+  // Normalise all stored dates to yyyy-mm-dd for the dropdown
+  const dates = [...new Set(faults.map(f => faultDateStr(f)).filter(Boolean))].sort().reverse();
   // Safe: dates are date strings (yyyy-mm-dd), not arbitrary user HTML
   sel.innerHTML = '<option value="">All Dates</option>' +
     dates.map(d => `<option${d === cur ? ' selected' : ''}>${esc(d)}</option>`).join('');
@@ -1141,7 +1167,7 @@ function renderTable() {
   let filtered = faults.filter(f => {
     const txt = [f.dt, f.location, f.tech, f.assigned, f.feeder, f.ftype, f.cname, f.phone].join(' ').toLowerCase();
     return (!search || txt.includes(search)) && (!fs || f.status === fs) &&
-           (!fp || f.priority === fp) && (!ff || f.feeder === ff) && (!fd || f.date === fd);
+           (!fp || f.priority === fp) && (!ff || f.feeder === ff) && (!fd || faultDateStr(f) === fd);
   });
 
   const tbody   = document.getElementById('fault-tbody');
@@ -1187,8 +1213,8 @@ function renderTable() {
     <tr>
       <td style="font-family:var(--mono);color:var(--text3);font-size:11px">${i + 1}</td>
       <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">
-        ${esc(f.date) || '—'}
-        ${f.time ? `<br><span style="color:var(--text3)">${esc(f.time)}</span>` : ''}
+        ${esc(faultDateStr(f)) || '—'}
+        ${f.time ? `<br><span style="color:var(--text3)">${esc(faultTimeStr(f))}</span>` : ''}
       </td>
       <td style="font-size:11px;color:var(--text2);max-width:130px">${esc(f.feeder) || '—'}</td>
       <td>
@@ -1619,14 +1645,43 @@ function exportCSV() {
 }
 
 // ── DAILY REPORT ──────────────────────────────────────────
-// Defaults to today's date; auto-generates when page is shown (see showPage).
+// Normalises f.date to yyyy-mm-dd regardless of whether it was stored as a
+// full ISO timestamp ("2026-05-07T23:00:00.000Z") or a plain date string.
+function faultDateStr(f) {
+  if (!f.date) return '';
+  // Already a plain date string (most common)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return f.date;
+  // ISO timestamp — extract local date
+  try {
+    const d = new Date(f.date);
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  } catch(e) { return f.date.slice(0, 10); }
+}
+
+// Normalise f.time — could be "HH:MM", "HH:MM:SS", or a full ISO timestamp
+// left over from earlier data imports.
+function faultTimeStr(f) {
+  if (!f.time) return '';
+  // Already a plain time string
+  if (/^\d{1,2}:\d{2}/.test(f.time)) return f.time.slice(0, 5);
+  // ISO timestamp — extract local HH:MM
+  try {
+    const d = new Date(f.time);
+    if (!isNaN(d) && d.getFullYear() > 1900) {
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+  } catch(e) {}
+  return f.time.slice(0, 5);
+}
 function generateReport() {
   const date   = document.getElementById('rep-date').value;
   const status = document.getElementById('rep-status').value;
   const feeder = document.getElementById('rep-feeder').value;
   let filtered = faults.filter(f =>
-    (!date   || f.date   === date)   &&
-    (!status || f.status === status) &&
+    (!date   || faultDateStr(f) === date) &&
+    (!status || f.status === status)      &&
     (!feeder || f.feeder === feeder)
   );
   if (!filtered.length) {
@@ -1660,6 +1715,7 @@ function generateReport() {
   txt += `DAILY TECHNICAL WORK ORDER REPORT\n`;
   txt += `Date     : ${date ? fmt(date) : 'All Dates'}\n`;
   txt += `Generated: ${new Date().toLocaleString('en-GB')}\n`;
+  txt += `Filter   : ${status || 'All Status'}  |  ${feeder || 'All Feeders'}\n`;
   txt += `${'─'.repeat(54)}\n`;
   txt += `Total: ${filtered.length}  |  Urgent: ${urgent.length}  |  Pending: ${filtered.filter(f => f.status === 'Pending').length}  |  Completed: ${filtered.filter(f => f.status === 'Completed').length}\n`;
   txt += `${'═'.repeat(54)}\n\n`;
