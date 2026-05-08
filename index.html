@@ -1043,29 +1043,41 @@ function startAutoRefresh() {
 async function doLogin() {
   const uname = (document.getElementById('login-username').value || '').trim().toLowerCase();
   const pass  = document.getElementById('login-password').value;
-  const hashedPass = await hashPassword(pass);
-  const saved = getSavedPasswords();
-  // Compare hash of entered password against stored hash (or override hash)
-  const user  = USERS.find(u => u.username === uname && (saved[uname] || u.password) === hashedPass);
+
+  let user = null;
+  try {
+    // Primary: compare SHA-256 hash of entered password
+    const hashedPass = await hashPassword(pass);
+    const saved = getSavedPasswords(); // returns only valid 64-char hex hashes
+    user = USERS.find(u => u.username === uname && (saved[uname] || u.password) === hashedPass);
+  } catch(e) {
+    // Fallback: crypto.subtle unavailable (e.g. some older browsers) — should not happen in practice
+    console.warn('crypto.subtle unavailable, login cannot proceed:', e);
+  }
+
   if (!user) {
     const err = document.getElementById('login-err');
     err.style.display = 'block';
     setTimeout(() => err.style.display = 'none', 3000);
     return;
   }
-  // Freeze an immutable snapshot so `currentUser.role = 'admin'` in the
-  // browser console silently fails (or throws in strict mode) rather than
-  // escalating privileges.
   currentUser = Object.freeze({ ...user });
   isAdmin = currentUser.role === 'admin';
-  // ── Persist session so page refresh does not log user out ──
   sessionStorage.setItem('ie_session', JSON.stringify({ username: currentUser.username }));
   startApp(currentUser.name, currentUser.role);
 }
 
-// Store per-username password overrides
+// Store per-username password overrides (SHA-256 hashes only)
 function getSavedPasswords() {
-  try { return JSON.parse(localStorage.getItem('ie_passwords') || '{}'); } catch(e) { return {}; }
+  try {
+    const raw = JSON.parse(localStorage.getItem('ie_passwords') || '{}');
+    // Safety: discard any entries that are NOT 64-char hex hashes (old plain-text format)
+    const clean = {};
+    Object.entries(raw).forEach(([k, v]) => {
+      if (typeof v === 'string' && /^[0-9a-f]{64}$/.test(v)) clean[k] = v;
+    });
+    return clean;
+  } catch(e) { return {}; }
 }
 function setSavedPasswords(obj) {
   try { localStorage.setItem('ie_passwords', JSON.stringify(obj)); } catch(e) {}
@@ -2179,6 +2191,19 @@ function renderAnalytics() {
 }
 
 // ── INIT ──────────────────────────────────────────────────
+// One-time migration: wipe any old plain-text ie_passwords from previous versions.
+// getSavedPasswords() already filters them out, but this keeps localStorage clean.
+(function migratePasswords() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('ie_passwords') || '{}');
+    const clean = {};
+    Object.entries(raw).forEach(([k, v]) => {
+      if (typeof v === 'string' && /^[0-9a-f]{64}$/.test(v)) clean[k] = v;
+    });
+    localStorage.setItem('ie_passwords', JSON.stringify(clean));
+  } catch(e) {}
+})();
+
 // Populate all dropdowns from the single TECHNICIANS source of truth.
 populateTechDropdowns();
 // Default date fields to today and time to current time.
