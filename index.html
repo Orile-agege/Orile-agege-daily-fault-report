@@ -272,6 +272,67 @@ textarea.fi-form{resize:vertical;min-height:80px}
   .main{padding:16px}
   #page-analytics > div[style*="grid-template-columns"]{grid-template-columns:1fr !important}
 }
+
+/* ══ WORK ORDER BOARD ══════════════════════════════════════ */
+.wo-board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.wo-col-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px 10px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:0}
+.wo-col-header.col-pending{background:var(--yellow-light);color:var(--yellow)}
+.wo-col-header.col-progress{background:var(--orange-light);color:var(--orange)}
+.wo-col-header.col-done{background:var(--green-light);color:var(--green)}
+.wo-col-count{font-size:15px;font-family:var(--mono);font-weight:700}
+.wo-col{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#f8fafc}
+.wo-col-body{padding:10px;display:flex;flex-direction:column;gap:10px;min-height:80px}
+
+/* Job Card */
+.wo-card{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);transition:box-shadow .15s}
+.wo-card:hover{box-shadow:0 3px 12px rgba(0,0,0,.1)}
+.wo-card-accent{height:4px}
+.wo-card-accent-urgent{background:linear-gradient(90deg,var(--red),#f87171)}
+.wo-card-accent-standard{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+.wo-card-accent-ppm{background:linear-gradient(90deg,#94a3b8,#cbd5e1)}
+.wo-card-body{padding:12px}
+.wo-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.wo-card-title{font-weight:700;font-size:13px;color:var(--text);line-height:1.3}
+.wo-card-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.wo-card-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:10px}
+.wo-meta-item{display:flex;flex-direction:column;gap:1px}
+.wo-meta-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.wo-meta-val{font-size:11px;color:var(--text);font-weight:500}
+
+/* Elapsed / SLA badge */
+.elapsed-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;font-family:var(--mono)}
+.elapsed-ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.elapsed-warn{background:#fefce8;color:#854d0e;border:1px solid #fde68a}
+.elapsed-overdue{background:var(--red-light);color:var(--red);border:1px solid #fca5a5;animation:pulse 2s infinite}
+
+/* Workflow Checklist */
+.wo-checklist{border-top:1px solid var(--border);padding:8px 12px 10px;background:#fafbfc}
+.wo-checklist-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:6px}
+.wo-steps{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.wo-step{display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .15s;user-select:none}
+.wo-step:hover{background:var(--blue-light)}
+.wo-step input[type=checkbox]{width:14px;height:14px;accent-color:var(--blue);cursor:pointer;flex-shrink:0}
+.wo-step-label{font-size:11px;color:var(--text2);font-weight:500;line-height:1.2}
+.wo-step.step-done .wo-step-label{color:var(--green);text-decoration:line-through;text-decoration-color:var(--green)}
+.wo-step.step-done{background:var(--green-light)}
+.wo-step.step-done:hover{background:#bbf7d0}
+
+/* Card footer actions */
+.wo-card-footer{padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:6px;justify-content:flex-end;background:#fff}
+.wo-card-completed-stamp{padding:8px 12px;border-top:1px solid var(--border);background:var(--green-light);font-size:11px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:5px}
+
+/* Report tab sub-toggle */
+.wo-tab-bar{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)}
+.wo-tab{padding:10px 20px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.wo-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.wo-tab:hover:not(.active){color:var(--text);background:var(--bg)}
+
+/* Column empty state */
+.wo-col-empty{text-align:center;padding:24px 12px;color:var(--text3);font-size:12px}
+.wo-col-empty-icon{font-size:24px;margin-bottom:6px}
+
+@media(max-width:900px){.wo-board{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -320,7 +381,8 @@ textarea.fi-form{resize:vertical;min-height:80px}
       <div class="nav-item tech-manager-only" onclick="showPage('log',this)"><span class="nav-icon">➕</span>Log Fault</div>
       <div class="nav-divider"></div>
       <div class="nav-label">Reports</div>
-      <div class="nav-item" onclick="showPage('daily',this)"><span class="nav-icon">📋</span>Daily Report</div>
+      <div class="nav-item" onclick="showPage('workorders',this)"><span class="nav-icon">📋</span>Work Orders</div>
+      <div class="nav-item" onclick="showPage('daily',this)"><span class="nav-icon">📄</span>Daily Report</div>
       <div class="nav-item manager-admin-only" onclick="showPage('analytics',this)" style="display:none"><span class="nav-icon">📈</span>Analytics</div>
       <div class="nav-item admin-only" onclick="showPage('admin',this)" style="display:none"><span class="nav-icon">⚙️</span>Admin Panel</div>
       <!-- Pending Tasks — shown for technicians only -->
@@ -559,11 +621,48 @@ textarea.fi-form{resize:vertical;min-height:80px}
         </div>
       </div>
 
+      <!-- ══ PAGE: WORK ORDERS ══════════════════════════════ -->
+      <div id="page-workorders" style="display:none">
+        <div class="card">
+          <div class="card-header" style="gap:16px;flex-wrap:wrap">
+            <div>
+              <div class="card-title">📋 Work Order Board</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Live execution board — track job progress in real time</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:auto">
+              <input class="fi" type="date" id="wo-date" style="width:auto" onchange="renderWorkOrders()">
+              <select class="fi" id="wo-feeder" style="width:auto" onchange="renderWorkOrders()">
+                <option value="">All Feeders</option>
+                <option>AgegeINJ — T1 Abattoir</option><option>AgegeINJ — T2 Orile Agege</option>
+                <option>AgegeINJ — T2 Abule Egba</option><option>AgegeINJ — T2 Power Line</option>
+                <option>AgegeINJ — T3 Tabon Tabon</option><option>AgegeINJ — T3 Pen Cinema</option>
+                <option>AdaranijoINJ — T1 Arigbanla</option><option>AdaranijoINJ — T1 NYSC</option>
+                <option>OgbaTCN — Abeokuta Exp.</option><option>MaplewoodINJ</option><option>Other</option>
+              </select>
+              <select class="fi" id="wo-tech" style="width:auto" onchange="renderWorkOrders()">
+                <option value="">All Technicians</option>
+              </select>
+              <select class="fi" id="wo-priority" style="width:auto" onchange="renderWorkOrders()">
+                <option value="">All Priorities</option>
+                <option>Urgent</option><option>Standard</option><option>PPM</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="copyWorkOrderReport()" title="Copy summary for WhatsApp">📋 Copy</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- KPI strip -->
+            <div class="rep-kpis" id="wo-kpis" style="margin-bottom:16px"></div>
+            <!-- Kanban board -->
+            <div id="wo-board-area"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- ══ PAGE: DAILY REPORT ══════════════════════════════ -->
       <div id="page-daily" style="display:none">
         <div class="card">
           <div class="card-header" style="gap:16px;flex-wrap:wrap">
-            <div class="card-title">📋 Daily Work Order Report</div>
+            <div class="card-title">📄 Daily Work Order Report</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:auto">
               <input class="fi" type="date" id="rep-date" style="width:auto">
               <select class="fi" id="rep-status" style="width:auto">
@@ -586,7 +685,7 @@ textarea.fi-form{resize:vertical;min-height:80px}
             <!-- Visual HTML report (shown to user) -->
             <div class="report-visual" id="report-visual">
               <div class="rep-empty">
-                <div class="rep-empty-icon">📋</div>
+                <div class="rep-empty-icon">📄</div>
                 <div class="rep-empty-msg">No report generated yet</div>
                 <div class="rep-empty-sub">Select a date and click <strong>Generate</strong> to view your daily work order report.</div>
               </div>
@@ -1108,17 +1207,22 @@ function logout() {
 
 // ── NAVIGATION ────────────────────────────────────────────
 function showPage(p, navEl) {
-  ['dashboard','log','daily','admin','analytics'].forEach(x => {
-    document.getElementById('page-' + x).style.display = x === p ? 'block' : 'none';
+  ['dashboard','log','daily','workorders','admin','analytics'].forEach(x => {
+    const el = document.getElementById('page-' + x);
+    if (el) el.style.display = x === p ? 'block' : 'none';
   });
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   if (navEl) navEl.classList.add('active');
-  const titles = { dashboard:'Dashboard', log:'Log Fault', daily:'Daily Report', admin:'Admin Panel', analytics:'Analytics' };
+  const titles = { dashboard:'Dashboard', log:'Log Fault', daily:'Daily Report', workorders:'Work Orders', admin:'Admin Panel', analytics:'Analytics' };
   document.getElementById('page-title').textContent = titles[p] || '';
   if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
   if (p === 'dashboard') renderTable();
   if (p === 'admin')     renderAdminTable();
   if (p === 'analytics') renderAnalytics();
+  if (p === 'workorders') {
+    document.getElementById('wo-date').value = nowDateStr();
+    renderWorkOrders();
+  }
   // Auto-generate report when navigating to daily page — reset filters first
   if (p === 'daily') {
     document.getElementById('rep-date').value   = nowDateStr();
